@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador Avanzado XPDL / BPMN - madeomade</title>
+    <title>Generador Avanzado XPDL / BPMN - Matriz RACI</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: linear-gradient(135deg, #0545B0 0%, #5A84CE 100%); min-height: 100vh; padding: 20px; }
@@ -43,8 +43,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🔄 Generador Avanzado XPDL / BPMN Corregido</h1>
-            <p>madeomade • Generación exacta con Eventos de Inicio, Fin y Transiciones Estructuradas</p>
+            <h1>🔄 Generador Avanzado XPDL / BPMN + RACI</h1>
+            <p>madeomade • Generación con Responsable, Ejecutante, Consultado e Informado</p>
         </header>
         <div class="content">
             <div class="panel left-panel">
@@ -59,7 +59,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="processDescription">Descripción Estructurada de Actividades</label>
+                    <label for="processDescription">Descripción Estructurada de Actividades (RACI)</label>
                     <textarea id="processDescription"></textarea>
                 </div>
                 <div id="message" class="message"></div>
@@ -95,30 +95,20 @@
     <script>
         let processData = { xpdl: '', bpmn: '' };
 
-        // Carga por defecto del flujo estructurado
-        document.getElementById('processDescription').value = `1. Identificación de necesidades
-Responsable: Encargado de compras
-Acción: Evaluar inventario y determinar necesidades de compra.
+        // Ejemplo por defecto cargado con toda la matriz RACI instalada
+        document.getElementById('processDescription').value = `1. Envío a Recursos Humanos
+Responsable: Empleado
+Ejecutante: Juan Perez, Administrador
+Consultado: Supervisor de Área
+Informado: Director General
+Acción: Remitir la solicitud aprobada a Recursos Humanos para su registro y tramitación.
 
-2. Investigación de proveedores
-Responsable: Encargado de compras
-Acción: Identificar proveedores potenciales.
-
-3. Solicitud de cotizaciones
-Responsable: Encargado de compras
-Acción: Solicitar cotizaciones a varios proveedores.
-
-4. Evaluación de cotizaciones
-Responsables: Encargado de compras y Gerente de ventas
-Acción: Comparar cotizaciones.
-
-5. Emisión de orden de compra
-Responsable: Encargado de compras
-Acción: Emitir orden de compra formal.
-
-6. Recepción de productos
-Responsable: Personal de almacén
-Acción: Recibir y verificar productos.`;
+2. Revisión y registro interno
+Responsable: Departamento de Recursos Humanos
+Ejecutante: Técnico de Personal
+Consultado: Jefe de Contabilidad
+Informado: Empleado
+Acción: Validar la documentación adjunta y proceder con la asignación presupuestaria.`;
 
         function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -153,6 +143,7 @@ Acción: Recibir y verificar productos.`;
                     continue;
                 }
 
+                // Capturar ID y Nombre de Actividad
                 const numMatch = lineStripped.match(/^\s*(\d+)\.\s*(.+?)$/);
                 if (numMatch) {
                     if (currentActivity) {
@@ -163,12 +154,16 @@ Acción: Recibir y verificar productos.`;
                         num: parseInt(numMatch[1]),
                         name: numMatch[2].trim(),
                         responsables: [],
+                        ejecutante: '',
+                        consultado: '',
+                        informado: '',
                         action: ''
                     };
                     isCapturingAction = false;
                     continue;
                 }
 
+                // Capturar Responsable
                 const respMatch = lineStripped.match(/^Responsables?:\s*(.+?)$/i);
                 if (respMatch && currentActivity) {
                     const respText = respMatch[1];
@@ -184,6 +179,31 @@ Acción: Recibir y verificar productos.`;
                     continue;
                 }
 
+                // Capturar Ejecutante
+                const ejecutanteMatch = lineStripped.match(/^Ejecutantes?:\s*(.+?)$/i);
+                if (ejecutanteMatch && currentActivity) {
+                    currentActivity.ejecutante = ejecutanteMatch[1].trim();
+                    isCapturingAction = false;
+                    continue;
+                }
+
+                // Capturar Consultado
+                const consultadoMatch = lineStripped.match(/^Consultados?:\s*(.+?)$/i);
+                if (consultadoMatch && currentActivity) {
+                    currentActivity.consultado = consultadoMatch[1].trim();
+                    isCapturingAction = false;
+                    continue;
+                }
+
+                // Capturar Informado
+                const informadoMatch = lineStripped.match(/^Informados?:\s*(.+?)$/i);
+                if (informadoMatch && currentActivity) {
+                    currentActivity.informado = informadoMatch[1].trim();
+                    isCapturingAction = false;
+                    continue;
+                }
+
+                // Capturar Acción
                 const actionMatch = lineStripped.match(/^Acción:\s*(.+?)$/i);
                 if (actionMatch && currentActivity) {
                     currentActivity.action = actionMatch[1].trim();
@@ -191,6 +211,7 @@ Acción: Recibir y verificar productos.`;
                     continue;
                 }
 
+                // Acumulador de párrafos para la acción
                 if (currentActivity && isCapturingAction) {
                     if (currentActivity.action) {
                         if (currentActivity.action.endsWith('\n')) {
@@ -209,7 +230,6 @@ Acción: Recibir y verificar productos.`;
                 activities.push(currentActivity);
             }
 
-            // Si no se asignaron roles, proveer uno genérico
             if (roles.size === 0) roles.add("Proceso General");
 
             return { activities, roles: Array.from(roles).sort() };
@@ -223,12 +243,10 @@ Acción: Recibir y verificar productos.`;
             
             const LANE_H = 120, TASK_W = 110, TASK_H = 65, EVENT_SIZE = 30, SPACING = 80;
 
-            // 1. Participantes
             let participantsXml = roles.map(role => {
                 return `    <Participant Id="${generateUUID()}" Name="${cleanXmlString(role)}">\n      <ParticipantType Type="ROLE" />\n      <Description>${cleanXmlString(role)}</Description>\n    </Participant>`;
             }).join('\n');
 
-            // 2. Mapeo de Lanes y Coordenadas Y
             let laneMap = {};
             let yCoord = 0;
             let lanesXml = roles.map(role => {
@@ -239,11 +257,9 @@ Acción: Recibir y verificar productos.`;
                 return xml;
             }).join('\n');
 
-            // 3. Crear Secuencia Unificada de Nodos (Inicio -> Tareas -> Fin)
             const flowNodes = [];
             let currentX = 120;
 
-            // Añadir Evento de Inicio (Asignado al carril del primer rol)
             const firstRole = activities[0]?.responsables[0] || roles[0];
             const firstLane = laneMap[firstRole];
             flowNodes.push({
@@ -259,7 +275,6 @@ Acción: Recibir y verificar productos.`;
             });
             currentX += EVENT_SIZE + SPACING;
 
-            // Añadir Tareas
             activities.forEach(act => {
                 const role = act.responsables[0] || roles[0];
                 const lane = laneMap[role];
@@ -279,7 +294,6 @@ Acción: Recibir y verificar productos.`;
                 currentX += TASK_W + SPACING;
             });
 
-            // Añadir Evento de Fin (Asignado al carril del último rol activo)
             const lastRole = activities[activities.length - 1]?.responsables[0] || roles[0];
             const lastLane = laneMap[lastRole];
             flowNodes.push({
@@ -294,7 +308,6 @@ Acción: Recibir y verificar productos.`;
                 laneId: lastLane.id
             });
 
-            // 4. Transformar Nodos a XML de Actividades
             let activitiesXml = flowNodes.map(node => {
                 const nameEscaped = cleanXmlString(node.name);
                 if (node.type === 'start') {
@@ -303,16 +316,21 @@ Acción: Recibir y verificar productos.`;
                     return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Event>\n            <EndEvent Result="None" />\n          </Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-6750208" FillColor="-1135958">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
                 } else {
                     const htmlAction = cleanXmlString(node.activity.action).replace(/\n/g, '&lt;br/&gt;');
-                    return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Description>&lt;p&gt;${htmlAction}&lt;/p&gt;</Description>\n          <Implementation>\n            <Task />\n          </Implementation>\n          <Documentation>&lt;p&gt;${htmlAction}&lt;/p&gt;</Documentation>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-16553830" FillColor="-1249281">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n          <ExtendedAttributes>\n            <ExtendedAttribute Name="BizagiAccountables" Value="${cleanXmlString(node.role)}" />\n          </ExtendedAttributes>\n        </Activity>`;
+                    
+                    // Inyección de Atributos extendidos nativos RACI de Bizagi
+                    let ramiAttributes = `\n            <ExtendedAttribute Name="BizagiAccountables" Value="${cleanXmlString(node.role)}" />`;
+                    if (node.activity.ejecutante) ramiAttributes += `\n            <ExtendedAttribute Name="BizagiPerformers" Value="${cleanXmlString(node.activity.ejecutante)}" />`;
+                    if (node.activity.consultado) ramiAttributes += `\n            <ExtendedAttribute Name="BizagiConsulted" Value="${cleanXmlString(node.activity.consultado)}" />`;
+                    if (node.activity.informado) ramiAttributes += `\n            <ExtendedAttribute Name="BizagiInformed" Value="${cleanXmlString(node.activity.informado)}" />`;
+
+                    return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Description>&lt;p&gt;${htmlAction}&lt;/p&gt;</Description>\n          <Implementation>\n            <Task />\n          </Implementation>\n          <Documentation>&lt;p&gt;${htmlAction}&lt;/p&gt;</Documentation>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-16553830" FillColor="-1249281">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n          <ExtendedAttributes>${ramiAttributes}\n          </ExtendedAttributes>\n        </Activity>`;
                 }
             }).join('\n');
 
-            // 5. Generar Conexiones Secuenciales (Flechas de Transición)
             let transitionsXml = [];
             for (let i = 0; i < flowNodes.length - 1; i++) {
                 const fromNode = flowNodes[i];
                 const toNode = flowNodes[i + 1];
-                
                 const fromX = fromNode.x + fromNode.w;
                 const fromY = fromNode.centerY;
                 const toX = toNode.x;
@@ -320,10 +338,8 @@ Acción: Recibir y verificar productos.`;
                 
                 let coordsXml = '';
                 if (Math.abs(fromY - toY) < 5) {
-                    // Misma altura lineal
                     coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
                 } else {
-                    // Enrutamiento ortogonal en escalera
                     const midX = fromX + (toX - fromX) / 2;
                     coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${toY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
                 }
@@ -377,7 +393,6 @@ ${transitionsXml.join('\n')}
             const processUuid = 'Process_' + generateUUID().replace(/-/g, '_');
             const flowElements = [];
             
-            // Replicar secuencia ordenada en el estándar BPMN
             flowElements.push({ id: 'StartEvent_01', name: 'Inicio', type: 'start' });
             activities.forEach((act, idx) => {
                 flowElements.push({
@@ -442,7 +457,7 @@ ${elementsXml}${flowsXml}  </process>
                 document.getElementById('xpdlOutput').textContent = processData.xpdl;
                 document.getElementById('bpmnOutput').textContent = processData.bpmn;
 
-                showMsg(`✅ ¡Éxito! Generadas ${activities.length} actividades estructuradas en ${roles.length} carril(es) con conectores completos.`, 'success');
+                showMsg(`✅ ¡Éxito! Generadas ${activities.length} actividades procesadas con Matriz RACI en ${roles.length} carriles.`, 'success');
 
             } catch (err) {
                 showMsg('💥 Error crítico procesando el modelo: ' + err.message, 'error');
@@ -458,7 +473,7 @@ ${elementsXml}${flowsXml}  </process>
         }
 
         function clearForm() {
-            document.getElementById('processId').value = 'SGP_NUEVO_P01';
+            document.getElementById('processId').value = 'SGP_COMPRA_P01';
             document.getElementById('processName').value = '';
             document.getElementById('processDescription').value = '';
             document.getElementById('xpdlOutput').textContent = 'Presiona Generar Modelos...';
