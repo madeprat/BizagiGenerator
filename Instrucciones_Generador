@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instrucciones y Guía de Uso - Generador Bizagi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #334155; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); padding: 40px; }
+        
+        header { border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 26px; color: #0545B0; font-weight: 700; }
+        .subtitle { font-size: 14px; color: #64748b; margin-top: 5px; }
+        
+        h2 { font-size: 18px; color: #1e293b; margin: 30px 0 15px 0; display: flex; align-items: center; gap: 10px; }
+        
+        .grid-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .rule-card { background: #f1f5f9; padding: 20px; border-radius: 8px; border-left: 4px solid #0545B0; }
+        .rule-card h3 { font-size: 15px; color: #0f172a; margin-bottom: 8px; }
+        .rule-card p { font-size: 13.5px; color: #475569; }
+        
+        ul, ol { padding-left: 20px; margin-bottom: 20px; font-size: 14.5px; color: #475569; }
+        li { margin-bottom: 8px; }
+        strong { color: #0f172a; }
+        
+        .code-block { background: #0f172a; color: #e2e8f0; padding: 25px; border-radius: 8px; font-family: "Fira Code", monospace; font-size: 13px; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; margin-top: 15px; border: 1px solid #1e293b; }
+        
+        .btn-download { background: #0545B0; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-download:hover { background: #04388d; transform: translateY(-1px); }
+        .btn-download:active { transform: translateY(0); }
+        
+        .badge { background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div>
+                <h1>Guía de Documentación de Procesos</h1>
+                <div class="subtitle">Estructura limpia para el generador XPDL / BPMN</div>
+            </div>
+            <button class="btn-download" onclick="downloadTemplate()">
+                📥 Descargar Plantilla .txt
+            </button>
+        </header>
+
+        <h2>📌 Estructura Obligatoria por Actividad</h2>
+        <p style="font-size: 15px; margin-bottom: 15px;">Para que el analizador automático convierta el texto en un diagrama de Bizagi sin errores, cada tarea debe seguir estrictamente este orden de tres bloques:</p>
+        
+        <div class="grid-rules">
+            <div class="rule-card">
+                <h3>1. Identificador Numérico</h3>
+                <p>La línea debe comenzar por un número seguido de un punto y el nombre de la tarea (ej: <code>1. Registro</code>). Evita letras u otros símbolos antes del número.</p>
+            </div>
+            <div class="rule-card">
+                <h3>2. Responsable (Carril)</h3>
+                <p>Fija quién hace la tarea usando la palabra clave <code>Responsable:</code>. Si son varios, sepáralos con comas o con una "y". El sistema creará los carriles de forma automática.</p>
+            </div>
+        </div>
+
+        <div class="rule-card" style="border-left-color: #10b981; background: #f0fdf4; margin-bottom: 30px;">
+            <h3>3. Acción Descriptiva y Bloques Multilínea (Listas)</h3>
+            <p>Comienza con la palabra clave <code>Acción:</code>. Todo el texto que escribas a partir de ahí (incluyendo saltos de línea, subpárrafos y viñetas con guiones simples) se acumulará dentro de la documentación de esa actividad de manera exacta, hasta que el sistema encuentre el número de la siguiente tarea.</p>
+        </div>
+
+        <h2>📋 Ejemplo de Visualización del Formato</h2>
+        <p style="font-size: 15px;">Así es como luce un proceso perfectamente estructurado y listo para ser copiado en tu herramienta web:</p>
+
+        <div class="code-block" id="templateContent">1. Registro de la incidencia
+Responsable: Usuario afectado
+Acción: Notificar el fallo técnico a través del portal de soporte interno. 
+El registro debe detallar los siguientes parámetros críticos para el equipo:
+- Aplicación o sistema donde ocurre el error
+- Captura de pantalla o código del mensaje de fallo
+- Grado de impacto (Bloqueante, Alto, Medio, Bajo)
+
+2. Clasificación y asignación
+Responsable: Técnico de Soporte Nivel 1
+Acción: Revisar la bandeja de entrada del sistema de tickets. Verificar que los datos estén completos, evaluar la prioridad real de la incidencia y asignar el caso al departamento técnico correspondiente en menos de 15 minutos.
+
+3. Diagnóstico y resolución
+Responsables: Ingeniero de Sistemas y Administrador de Base de Datos
+Acción: Investigar la causa raíz del problema en los entornos de producción. 
+Una vez localizado el origen del fallo, se procederá con el plan de contingencia:
+- Ejecutar scripts de reparación en la base de datos si aplica
+- Reiniciar los servicios afectados en el servidor en la ventana de mantenimiento</div>
+
+        <h2>🛠️ Recomendaciones para evitar fallos</h2>
+        <ul>
+            <li><strong>Guiones estándar:</strong> Se recomienda usar guiones simples (<code>-</code>) para los listados internos. No obstante, el nuevo diseño web está preparado para limpiar y procesar las viñetas pesadas (<code>•</code>) de Microsoft Word sin romper el código.</li>
+            <li><strong>Líneas en blanco:</strong> Puedes dejar líneas en blanco entre tareas para que tu texto sea más legible; el analizador las omitirá o las gestionará de forma inteligente según corresponda.</li>
+            <li><strong>Nombres de responsables idénticos:</strong> Asegúrate de escribir los nombres de los roles siempre de la misma forma (ej: no mezcles "Soporte Nivel 1" y "Soporte N1"), de lo contrario, el sistema generará carriles duplicados en Bizagi.</li>
+        </ul>
+    </div>
+
+    <script>
+        function downloadTemplate() {
+            const templateText = `================================================================================
+PLANTILLA DE ESTRUCTURA ESTÁNDAR PARA GENERADOR DE PROCESOS BIZAGI
+================================================================================
+Guarda este archivo en texto plano (.txt) para usarlo de guía de documentación.
+
+--------------------------------------------------------------------------------
+REGLAS DE ORO PARA EVITAR COMPLICACIONES EN EL FORMULARIO HTML:
+--------------------------------------------------------------------------------
+1. CADA TAREA DEBE EMPEZAR CON SU NÚMERO: Usa "X. Nombre de la tarea" (Ej: 1. Inicio)
+2. EL RESPONSABLE DEBE IR PRIMERO: Pon la línea "Responsable:" justo debajo del nombre.
+3. SI HAY VARIOS RESPONSABLES: Sepáralos con una coma (,) o con la palabra "y".
+4. LA ACCIÓN CIERRA LA TAREA: La palabra "Acción:" marca el inicio de la descripción.
+5. TEXTO MULTILÍNEA Y VIÑETAS: Todo lo que escribas debajo de "Acción:" se guardará 
+   dentro de esa misma tarea hasta que el programa detecte el número de la siguiente.
+   Para las listas, te sugerimos usar guiones simples (-) para máxima compatibilidad.
+
+================================================================================
+EJEMPLO PRÁCTICO: PROCESO DE GESTIÓN DE INCIDENCIAS
+================================================================================
+
+1. Registro de la incidencia
+Responsable: Usuario afectado
+Acción: Notificar el fallo técnico a través del portal de soporte interno. 
+El registro debe detallar los siguientes parámetros críticos para el equipo técnico:
+- Aplicación o sistema donde ocurre el error
+- Captura de pantalla o código del mensaje de fallo
+- Grado de impacto en su trabajo diario (Bloqueante, Alto, Medio, Bajo)
+
+2. Clasificación y asignación
+Responsable: Técnico de Soporte Nivel 1
+Acción: Revisar la bandeja de entrada del sistema de tickets. Verificar que los datos estén completos, evaluar la prioridad real de la incidencia y asignar el caso al departamento técnico correspondiente en menos de 15 minutos.
+
+3. Diagnóstico y resolución
+Responsables: Ingeniero de Sistemas y Administrador de Base de Datos
+Acción: Investigar la causa raíz del problema en los entornos de producción. 
+Una vez localizado el origen del fallo, se procederá con el plan de contingencia:
+- Ejecutar scripts de reparación en la base de datos si aplica
+- Reiniciar los servicios afectados en el servidor en la ventana de mantenimiento
+- Documentar los cambios realizados en la bitácora técnica de cambios
+
+4. Validación del usuario
+Responsable: Usuario afectado
+Acción: Probar el funcionamiento del sistema una vez recibida la notificación de reparación. En caso de conformidad, cerrar el ticket desde el portal; si el problema persiste, reabrirlo explicando detalladamente qué sigue fallando.
+
+5. Cierre formal e informe
+Responsable: Coordinador de Soporte Técnico
+Acción: Archivar de manera definitiva el ticket de soporte en el sistema informático. Actualizar la base de conocimientos (*Knowledge Base*) de la empresa con la solución aplicada para agilizar la resolución de incidentes similares en el futuro.
+
+================================================================================
+FIN DE LA PLANTILLA
+================================================================================`;
+
+            const blob = new Blob([templateText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ejemplo.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
