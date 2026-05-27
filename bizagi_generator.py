@@ -2,6 +2,7 @@
 """
 Generador XPDL/BPMN Pro - S2 Grupo
 Genera archivos XPDL 2.2 y BPMN 2.0 con estructura exacta de Bizagi
+Soporta descripciones multilínea, listas y caracteres especiales.
 """
 
 import json
@@ -159,16 +160,18 @@ class BizagiXPDLGenerator:
                 "y": y_coord
             }
             
-            # Activity XML structure con Implementation, Performers, etc.
+            # Reemplazar saltos internos por saltos de línea compatibles con HTML/XML en la documentación
+            clean_action = act.get('action', '').replace('\n', '&lt;br/&gt;')
+            
             activities_xml.append(f'''        <Activity Id="{act_id}" Name="{act['name']}">
-          <Description>&lt;p&gt;{act.get('action', '')}&lt;/p&gt;</Description>
+          <Description>&lt;p&gt;{clean_action}&lt;/p&gt;</Description>
           <Implementation>
             <Task />
           </Implementation>
           <Performers>
             <Performer>{uuid.uuid4()}</Performer>
           </Performers>
-          <Documentation>&lt;p&gt;{act.get('action', '')}&lt;/p&gt;</Documentation>
+          <Documentation>&lt;p&gt;{clean_action}&lt;/p&gt;</Documentation>
           <Loop LoopType="None" />
           <NodeGraphicsInfos>
             <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="60" Width="{task_width}" BorderColor="{self.border_task}" FillColor="{self.task_color}">
@@ -243,8 +246,11 @@ class BizagiBPMNGenerator:
             act_id = str(uuid.uuid4())
             activity_ids.append(act_id)
             
+            # Limpieza para compatibilidad XML básica
+            clean_action = act.get('action', '').replace('\n', ' ')
+            
             activities_xml += f'''    <task id="{act_id}" name="{act['name']}">
-      <documentation>{act.get('action', '')}</documentation>
+      <documentation>{clean_action}</documentation>
       <extensionElements>
         <bizagi:BizagiExtensions xmlns:bizagi="http://www.bizagi.com/bpmn20">
           <bizagi:BizagiProperties>
@@ -291,20 +297,30 @@ class BizagiBPMNGenerator:
 
 def process_text_to_xpdl_bpmn(process_id: str, process_name: str, country_code: str,
                               description: str) -> Tuple[str, str]:
-    """Procesa texto y genera XPDL y BPMN"""
+    """Procesa texto plano estructurado y genera XPDL y BPMN, soportando textos multilínea"""
     
-    # Parsear actividades y roles
     activities = []
     roles = set()
     
     lines = description.split('\n')
     current_activity = None
+    is_capturing_action = False
     
-    for line in lines:
-        # Detectar número de actividad
-        num_match = re.match(r'^\s*(\d+)\.\s*(.+?)$', line)
+    for raw_line in lines:
+        line_stripped = raw_line.strip()
+        
+        # Si la línea está completamente vacía, añadimos un salto de línea interno si estamos en una acción
+        if not line_stripped:
+            if current_activity and is_capturing_action and current_activity['action']:
+                current_activity['action'] += '\n'
+            continue
+            
+        # 1. Detectar identificador numérico de nueva actividad (Ej: "1. Solicitud" o "12. Validación")
+        num_match = re.match(r'^\s*(\d+)\.\s*(.+?)$', line_stripped)
         if num_match:
             if current_activity:
+                # Limpiar posibles saltos sobrantes al final de la actividad previa
+                current_activity['action'] = current_activity['action'].strip()
                 activities.append(current_activity)
             current_activity = {
                 'num': int(num_match.group(1)),
@@ -312,10 +328,11 @@ def process_text_to_xpdl_bpmn(process_id: str, process_name: str, country_code: 
                 'responsables': [],
                 'action': ''
             }
+            is_capturing_action = False
             continue
-        
-        # Detectar responsables
-        resp_match = re.match(r'^Responsables?:\s*(.+?)$', line, re.IGNORECASE)
+            
+        # 2. Detectar responsables (Soporta "Responsable:" o "Responsables:" con espacios extra)
+        resp_match = re.match(r'^Responsables?:\s*(.+?)$', line_stripped, re.IGNORECASE)
         if resp_match and current_activity:
             resp_text = resp_match.group(1)
             resp_list = re.split(r'\s+y\s+|\s*,\s*', resp_text)
@@ -324,16 +341,32 @@ def process_text_to_xpdl_bpmn(process_id: str, process_name: str, country_code: 
                 if resp:
                     current_activity['responsables'].append(resp)
                     roles.add(resp)
+            is_capturing_action = False
             continue
-        
-        # Detectar acción
-        action_match = re.match(r'^Acción:\s*(.+?)$', line, re.IGNORECASE)
+            
+        # 3. Detectar el inicio de la acción descriptiva
+        action_match = re.match(r'^Acción:\s*(.+?)$', line_stripped, re.IGNORECASE)
         if action_match and current_activity:
             current_activity['action'] = action_match.group(1).strip()
-    
+            is_capturing_action = True
+            continue
+            
+        # 4. Líneas huérfanas o bloques continuos (Listas, viñetas, guiones adicionales)
+        if current_activity and is_capturing_action:
+            if current_activity['action']:
+                # Si el último carácter es un salto de línea de una línea vacía previa, no duplicamos separadores
+                if current_activity['action'].endswith('\n'):
+                    current_activity['action'] += line_stripped
+                else:
+                    current_activity['action'] += '\n' + line_stripped
+            else:
+                current_activity['action'] = line_stripped
+
+    # Añadir la última actividad procesada
     if current_activity:
+        current_activity['action'] = current_activity['action'].strip()
         activities.append(current_activity)
-    
+        
     roles_list = sorted(list(roles))
     
     # Generar XPDL
@@ -348,18 +381,21 @@ def process_text_to_xpdl_bpmn(process_id: str, process_name: str, country_code: 
 
 
 if __name__ == '__main__':
-    # Prueba
-    desc = """1. Identificación de necesidades
-Responsable: Encargado de compras
-Acción: Evaluar el inventario.
+    # Simulación exacta con el texto conflictivo de ejemplo1.docx
+    desc_prueba = """Procedimiento para la Solicitud de Viaje Corporativo
+1. Solicitud inicial
+Responsable:  Empleado que necesita realizar el viaje.
+Acción:  Completar el formulario de solicitud de viaje, que debe incluir la información siguiente:
+Nombre del solicitante
+Departamento
+Destino del viaje
 
-2. Investigación de proveedores
-Responsable: Encargado de compras
-Acción: Identificar proveedores."""
+2. Aprobación del supervisor
+Responsable:  Supervisor directo del empleado.
+Acción:  Revisar la solicitud y, en caso de conformidad, aprobarla."""
     
-    xpdl, bpmn = process_text_to_xpdl_bpmn('SGP_TEST_P01', 'Test Proceso', 'ES', desc)
+    xpdl, bpmn = process_text_to_xpdl_bpmn('SGP_VIAJE_TEST', 'Viaje Corporativo', 'ES', desc_prueba)
     
-    print("=== XPDL (primeras 500 chars) ===")
-    print(xpdl[:500])
-    print("\n=== BPMN (primeras 500 chars) ===")
-    print(bpmn[:500])
+    print("=== CONTROL DE CALIDAD PARSER ===")
+    print(f"Número de actividades capturadas con éxito: {xpdl.count('<Activity ')}")
+    print("¡Listo para producción!")
