@@ -8,10 +8,16 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: linear-gradient(135deg, #0545B0 0%, #5A84CE 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
-        header { background: linear-gradient(135deg, #0545B0 0%, #5A84CE 100%); color: white; padding: 40px; text-align: center; }
+        header { background: linear-gradient(135deg, #0545B0 0%, #5A84CE 100%); color: white; padding: 40px; text-align: center; position: relative; }
         header h1 { font-size: 28px; margin-bottom: 10px; }
         header p { font-size: 14px; opacity: 0.9; }
-        .content { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 200px); }
+        
+        /* Botones de ayuda en cabecera */
+        .header-actions { margin-top: 15px; display: flex; justify-content: center; gap: 15px; }
+        .btn-help { background: rgba(255, 255, 255, 0.15); color: white; border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-weight: 500; font-size: 13px; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-help:hover { background: rgba(255, 255, 255, 0.25); border-color: white; transform: translateY(-1px); }
+        
+        .content { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 220px); }
         .panel { padding: 30px; display: flex; flex-direction: column; gap: 20px; }
         .left-panel { border-right: 1px solid #e2e8f0; background: #f8fafc; }
         .right-panel { background: white; }
@@ -38,6 +44,24 @@
         .message.show { display: block; }
         .message.success { background: #bbf7d0; color: #166534; }
         .message.error { background: #fecaca; color: #991b1b; }
+
+        /* Estilos del Modal de Instrucciones */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; max-width: 680px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; animation: modalFadeIn 0.25s ease; }
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { background: #0545B0; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { font-size: 18px; font-weight: 600; }
+        .modal-close { font-size: 28px; font-weight: bold; cursor: pointer; color: rgba(255, 255, 255, 0.8); transition: color 0.2s; line-height: 1; }
+        .modal-close:hover { color: white; }
+        .modal-body { padding: 25px; color: #334155; font-size: 14px; line-height: 1.6; max-height: 70vh; overflow-y: auto; }
+        .modal-body h3 { margin-top: 20px; margin-bottom: 8px; color: #0545B0; font-size: 15px; border-left: 3px solid #0545B0; padding-left: 8px; }
+        .modal-body ul { margin-left: 20px; margin-bottom: 15px; }
+        .modal-body li { margin-bottom: 6px; }
+        .format-example { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #0545B0; padding: 15px; margin: 15px 0; border-radius: 4px; }
+        .format-example strong { color: #1e293b; display: block; margin-bottom: 5px; }
+        .format-example pre { background: transparent; color: #0f172a; padding: 0; font-size: 12px; font-family: monospace; max-height: none; white-space: pre; }
+        .modal-footer { padding: 15px 25px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right; }
     </style>
 </head>
 <body>
@@ -45,6 +69,13 @@
         <header>
             <h1>🔄 Generador Avanzado XPDL / BPMN + RACI</h1>
             <p>madeomade • Generación con Responsable, Ejecutante, Consultado e Informado</p>
+            <div class="header-actions">
+                <!-- BOTÓN PARA ABRIR LAS INSTRUCCIONES INTEGRADAS (MODAL) -->
+                <button class="btn-help" onclick="openModal()">📖 Ver Guía de Formato (Modal)</button>
+                
+                <!-- ENLACE POR SI TIENES UNA PÁGINA INDEPENDIENTE LLAMADA instrucciones.html -->
+                <a href="instrucciones.html" class="btn-help" target="_blank">🔗 Abrir instrucciones.html externa</a>
+            </div>
         </header>
         <div class="content">
             <div class="panel left-panel">
@@ -92,10 +123,46 @@
         </div>
     </div>
 
+    <!-- VENTANA MODAL INTEGRADA DE INSTRUCCIONES -->
+    <div id="instructionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📖 Guía de Uso e Instrucciones de Formato</h2>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Para mapear correctamente la <strong>Matriz RACI</strong> en Bizagi de forma automatizada, estructura cada una de las actividades en el panel izquierdo respetando el siguiente formato:</p>
+                
+                <div class="format-example">
+                    <strong>Estructura por Actividad:</strong>
+                    <pre>1. Nombre de la Actividad o Tarea
+Responsable: Rol principal (Determina el carril / Lane)
+Ejecutante: Persona o rol que ejecuta la acción
+Consultado: Persona o rol que aporta feedback
+Informado: Persona o rol notificado al finalizar
+Acción: Descripción técnica detallada del proceso.</pre>
+                </div>
+
+                <h3>💡 Comportamiento en Bizagi:</h3>
+                <ul>
+                    <li><strong>Responsable:</strong> Se utiliza para agrupar la actividad dentro de su correspondiente carril o <em>Lane</em> visual en el diagrama.</li>
+                    <li><strong>Ejecutante, Consultado e Informado:</strong> El script los inyecta dinámicamente como <code>ExtendedAttributes</code> nativos de Bizagi (<code>BizagiPerformers</code>, <code>BizagiConsulted</code>, y <code>BizagiInformed</code>). Al importar el archivo XPDL, estos datos se reflejarán de inmediato en las propiedades avanzadas del objeto.</li>
+                    <li><strong>Acción:</strong> Todo el texto libre debajo de esta etiqueta se compila como la documentación del nodo.</li>
+                </ul>
+
+                <h3>⚙️ Nota de Integración:</h3>
+                <p>En la cabecera tienes tanto un botón para abrir esta ventana emergente cómoda como un enlace directo a un archivo <code>instrucciones.html</code> independiente por si prefieres mantener ambos documentos por separado en tu servidor local o directorio de proyecto.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" style="flex:none; width:auto; padding:10px 20px;" onclick="closeModal()">Entendido</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let processData = { xpdl: '', bpmn: '' };
 
-        // Ejemplo por defecto cargado con toda la matriz RACI instalada
+        // Ejemplo por defecto
         document.getElementById('processDescription').value = `1. Envío a Recursos Humanos
 Responsable: Empleado
 Ejecutante: Juan Perez, Administrador
@@ -143,7 +210,6 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     continue;
                 }
 
-                // Capturar ID y Nombre de Actividad
                 const numMatch = lineStripped.match(/^\s*(\d+)\.\s*(.+?)$/);
                 if (numMatch) {
                     if (currentActivity) {
@@ -163,7 +229,6 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     continue;
                 }
 
-                // Capturar Responsable
                 const respMatch = lineStripped.match(/^Responsables?:\s*(.+?)$/i);
                 if (respMatch && currentActivity) {
                     const respText = respMatch[1];
@@ -179,7 +244,6 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     continue;
                 }
 
-                // Capturar Ejecutante
                 const ejecutanteMatch = lineStripped.match(/^Ejecutantes?:\s*(.+?)$/i);
                 if (ejecutanteMatch && currentActivity) {
                     currentActivity.ejecutante = ejecutanteMatch[1].trim();
@@ -187,7 +251,6 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     continue;
                 }
 
-                // Capturar Consultado
                 const consultadoMatch = lineStripped.match(/^Consultados?:\s*(.+?)$/i);
                 if (consultadoMatch && currentActivity) {
                     currentActivity.consultado = consultadoMatch[1].trim();
@@ -195,7 +258,6 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     continue;
                 }
 
-                // Capturar Informado
                 const informadoMatch = lineStripped.match(/^Informados?:\s*(.+?)$/i);
                 if (informadoMatch && currentActivity) {
                     currentActivity.informado = informadoMatch[1].trim();
@@ -203,7 +265,6 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     continue;
                 }
 
-                // Capturar Acción
                 const actionMatch = lineStripped.match(/^Acción:\s*(.+?)$/i);
                 if (actionMatch && currentActivity) {
                     currentActivity.action = actionMatch[1].trim();
@@ -211,7 +272,6 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     continue;
                 }
 
-                // Acumulador de párrafos para la acción
                 if (currentActivity && isCapturingAction) {
                     if (currentActivity.action) {
                         if (currentActivity.action.endsWith('\n')) {
@@ -316,8 +376,6 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Event>\n            <EndEvent Result="None" />\n          </Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-6750208" FillColor="-1135958">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
                 } else {
                     const htmlAction = cleanXmlString(node.activity.action).replace(/\n/g, '&lt;br/&gt;');
-                    
-                    // Inyección de Atributos extendidos nativos RACI de Bizagi
                     let ramiAttributes = `\n            <ExtendedAttribute Name="BizagiAccountables" Value="${cleanXmlString(node.role)}" />`;
                     if (node.activity.ejecutante) ramiAttributes += `\n            <ExtendedAttribute Name="BizagiPerformers" Value="${cleanXmlString(node.activity.ejecutante)}" />`;
                     if (node.activity.consultado) ramiAttributes += `\n            <ExtendedAttribute Name="BizagiConsulted" Value="${cleanXmlString(node.activity.consultado)}" />`;
@@ -344,7 +402,8 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                     coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${toY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
                 }
 
-                transitionsXml.push(`        <Transition Id="${generateUUID()}" From="${fromNode.id}" To="${toNode.id}">\n          <ConnectorGraphicsInfos>\n            <ConnectorGraphicsInfo ToolId="BizAgi_Process_Modeler" BorderColor="-16777216">\n${coordsXml}\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphicsInfos>\n        </Transition>`);
+                transitionsXml.push(`        <Transition Id="${generateUUID()}" From="${fromNode.id}" To="${toNode.id}">\n          <ConnectorGraphicsInfos>\n            <ConnectorGraphicsInfo ToolId="BizAgi_Process_Modeler" BorderColor="-16777216">
+${coordsXml}\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphicsInfos>\n        </Transition>`);
             }
 
             return `<?xml version="1.0" encoding="utf-8"?>
@@ -410,7 +469,8 @@ ${transitionsXml.join('\n')}
             flowElements.forEach((node, i) => {
                 const nameEsc = cleanXmlString(node.name);
                 let incoming = i > 0 ? `      <incoming>Flow_${i-1}</incoming>\n` : '';
-                let outgoing = i < flowElements.length - 1 ? `      <outgoing>Flow_${i}</outgoing>\n` : '';
+                let outgoing = i < flowElements.length - 1 ? `      <outgoing>Flow_${i}</outgoing>
+` : '';
 
                 if (node.type === 'start') {
                     elementsXml += `    <startEvent id="${node.id}" name="${nameEsc}">\n${outgoing}    </startEvent>\n`;
@@ -500,6 +560,20 @@ ${elementsXml}${flowsXml}  </process>
             msg.textContent = text;
             msg.className = `message show ${type}`;
             setTimeout(() => msg.classList.remove('show'), 6000);
+        }
+
+        // FUNCIONES DEL MODAL
+        function openModal() {
+            document.getElementById('instructionModal').classList.add('show');
+        }
+        function closeModal() {
+            document.getElementById('instructionModal').classList.remove('show');
+        }
+        window.onclick = function(event) {
+            const modal = document.getElementById('instructionModal');
+            if (event.target === modal) {
+                closeModal();
+            }
         }
     </script>
 </body>
