@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador XPDL/BPMN FINAL - madeomade</title>
+    <title>Generador Avanzado XPDL / BPMN - madeomade</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: linear-gradient(135deg, #0545B0 0%, #5A84CE 100%); min-height: 100vh; padding: 20px; }
@@ -20,7 +20,7 @@
         label { font-weight: 600; color: #334155; font-size: 14px; }
         input, textarea { padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; transition: all 0.2s; font-family: inherit; }
         input:focus, textarea:focus { outline: none; border-color: #0545B0; box-shadow: 0 0 0 3px rgba(5,69,176,0.1); }
-        textarea { resize: vertical; min-height: 350px; font-family: monospace; font-size: 13px; line-height: 1.6; }
+        textarea { resize: vertical; min-height: 380px; font-family: monospace; font-size: 13px; line-height: 1.6; }
         .btn-group { display: flex; gap: 10px; margin-top: auto; }
         button { padding: 12px 24px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px; }
         .btn-primary { background: #0545B0; color: white; flex: 2; }
@@ -33,7 +33,7 @@
         .tab-content { display: none; flex-direction: column; gap: 15px; height: 100%; }
         .tab-content.active { display: flex; }
         .code-container { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
-        pre { background: #0f172a; color: #e2e8f0; padding: 20px; border-radius: 8px; overflow: auto; font-family: "Fira Code", monospace; font-size: 13px; flex: 1; max-height: 500px; white-space: pre-wrap; }
+        pre { background: #0f172a; color: #e2e8f0; padding: 20px; border-radius: 8px; overflow: auto; font-family: "Fira Code", monospace; font-size: 11px; flex: 1; max-height: 500px; white-space: pre-wrap; }
         .message { padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 500; display: none; }
         .message.show { display: block; }
         .message.success { background: #bbf7d0; color: #166534; }
@@ -43,29 +43,29 @@
 <body>
     <div class="container">
         <header>
-            <h1>Generador Avanzado XPDL / BPMN</h1>
-            <p>madeomade • Generación de diagramas compatibles con Bizagi Modeler</p>
+            <h1>🔄 Generador Avanzado XPDL / BPMN Corregido</h1>
+            <p>madeomade • Generación exacta con Eventos de Inicio, Fin y Transiciones Estructuradas</p>
         </header>
         <div class="content">
             <div class="panel left-panel">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="processId">ID del Proceso</label>
-                        <input type="text" id="processId" value="SGP_VIAJE_P01">
+                        <input type="text" id="processId" value="SGP_COMPRA_P01">
                     </div>
                     <div class="form-group">
                         <label for="processName">Nombre del Proceso</label>
-                        <input type="text" id="processName" placeholder="Ej: Viaje Corporativo">
+                        <input type="text" id="processName" value="Gestión de Compras">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="processDescription">Descripción Estructurada de Actividades</label>
-                    <textarea id="processDescription" placeholder="1. Tarea&#10;Responsable: Rol&#10;Acción: Descripción..."></textarea>
+                    <textarea id="processDescription"></textarea>
                 </div>
                 <div id="message" class="message"></div>
                 <div class="btn-group">
                     <button class="btn-secondary" onclick="clearForm()">Limpiar</button>
-                    <button class="btn-primary" onclick="generateDiagrams()">Generar Modelos</button>
+                    <button class="btn-primary" onclick="generateDiagrams()">⚙️ Generar Modelos</button>
                 </div>
             </div>
             
@@ -77,16 +77,16 @@
                 
                 <div id="xpdl-tab" class="tab-content active">
                     <div class="code-container">
-                        <pre><code id="xpdlOutput"></code></pre>
+                        <pre><code id="xpdlOutput">Presiona Generar Modelos...</code></pre>
                     </div>
-                    <button class="btn-primary" onclick="downloadFile('xpdl')">Descargar .XPDL</button>
+                    <button class="btn-primary" onclick="downloadFile('xpdl')">📥 Descargar .XPDL</button>
                 </div>
                 
                 <div id="bpmn-tab" class="tab-content">
                     <div class="code-container">
-                        <pre><code id="bpmnOutput"></code></pre>
+                        <pre><code id="bpmnOutput">Presiona Generar Modelos...</code></pre>
                     </div>
-                    <button class="btn-primary" onclick="downloadFile('bpmn')">Descargar .BPMN</button>
+                    <button class="btn-primary" onclick="downloadFile('bpmn')">📥 Descargar .BPMN</button>
                 </div>
             </div>
         </div>
@@ -94,6 +94,31 @@
 
     <script>
         let processData = { xpdl: '', bpmn: '' };
+
+        // Carga por defecto del flujo estructurado
+        document.getElementById('processDescription').value = `1. Identificación de necesidades
+Responsable: Encargado de compras
+Acción: Evaluar inventario y determinar necesidades de compra.
+
+2. Investigación de proveedores
+Responsable: Encargado de compras
+Acción: Identificar proveedores potenciales.
+
+3. Solicitud de cotizaciones
+Responsable: Encargado de compras
+Acción: Solicitar cotizaciones a varios proveedores.
+
+4. Evaluación de cotizaciones
+Responsables: Encargado de compras y Gerente de ventas
+Acción: Comparar cotizaciones.
+
+5. Emisión de orden de compra
+Responsable: Encargado de compras
+Acción: Emitir orden de compra formal.
+
+6. Recepción de productos
+Responsable: Personal de almacén
+Acción: Recibir y verificar productos.`;
 
         function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -103,6 +128,7 @@
         }
 
         function cleanXmlString(str) {
+            if (!str) return '';
             return str.replace(/&/g, '&amp;')
                       .replace(/</g, '&lt;')
                       .replace(/>/g, '&gt;')
@@ -118,7 +144,6 @@
             let isCapturingAction = false;
 
             for (let rawLine of lines) {
-                // 1. Limpieza rigurosa de viñetas de Word (•), tabulaciones y espacios en blanco
                 let lineStripped = rawLine.replace(/•/g, '-').replace(/\t/g, ' ').trim();
 
                 if (!lineStripped) {
@@ -128,7 +153,6 @@
                     continue;
                 }
 
-                // 2. Comprobar inicio de nueva actividad (Ej: "1. Solicitud")
                 const numMatch = lineStripped.match(/^\s*(\d+)\.\s*(.+?)$/);
                 if (numMatch) {
                     if (currentActivity) {
@@ -145,7 +169,6 @@
                     continue;
                 }
 
-                // 3. Comprobar línea de responsable/s
                 const respMatch = lineStripped.match(/^Responsables?:\s*(.+?)$/i);
                 if (respMatch && currentActivity) {
                     const respText = respMatch[1];
@@ -161,7 +184,6 @@
                     continue;
                 }
 
-                // 4. Comprobar inicio de la acción
                 const actionMatch = lineStripped.match(/^Acción:\s*(.+?)$/i);
                 if (actionMatch && currentActivity) {
                     currentActivity.action = actionMatch[1].trim();
@@ -169,7 +191,6 @@
                     continue;
                 }
 
-                // 5. Acumulador multilínea (Listas secundarias, sub-párrafos, viñetas convertidas)
                 if (currentActivity && isCapturingAction) {
                     if (currentActivity.action) {
                         if (currentActivity.action.endsWith('\n')) {
@@ -188,6 +209,9 @@
                 activities.push(currentActivity);
             }
 
+            // Si no se asignaron roles, proveer uno genérico
+            if (roles.size === 0) roles.add("Proceso General");
+
             return { activities, roles: Array.from(roles).sort() };
         }
 
@@ -197,47 +221,114 @@
             const poolId = generateUUID();
             const timestamp = new Date().toISOString();
             
-            // Participantes
+            const LANE_H = 120, TASK_W = 110, TASK_H = 65, EVENT_SIZE = 30, SPACING = 80;
+
+            // 1. Participantes
             let participantsXml = roles.map(role => {
                 return `    <Participant Id="${generateUUID()}" Name="${cleanXmlString(role)}">\n      <ParticipantType Type="ROLE" />\n      <Description>${cleanXmlString(role)}</Description>\n    </Participant>`;
             }).join('\n');
 
-            // Lanes y asignación de coordenadas fijas para Bizagi
+            // 2. Mapeo de Lanes y Coordenadas Y
             let laneMap = {};
             let yCoord = 0;
             let lanesXml = roles.map(role => {
                 const laneId = generateUUID();
-                laneMap[role] = { id: laneId, y: yCoord };
-                let xml = `        <Lane Id="${laneId}" Name="${cleanXmlString(role)}" ParentPool="${poolId}">\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="120" Width="1800" BorderColor="-11513776" FillColor="-1">\n              <Coordinates XCoordinate="50" YCoordinate="${yCoord}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Lane>`;
-                yCoord += 120;
+                laneMap[role] = { id: laneId, y: yCoord, centerY: yCoord + (LANE_H / 2) };
+                let xml = `        <Lane Id="${laneId}" Name="${cleanXmlString(role)}" ParentPool="${poolId}">\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${LANE_H}" Width="2500" BorderColor="-11513776" FillColor="-1">\n              <Coordinates XCoordinate="50" YCoordinate="${yCoord}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Lane>`;
+                yCoord += LANE_H;
                 return xml;
             }).join('\n');
 
-            // Actividades
-            let activityMap = {};
-            let xCoord = 150;
-            let activitiesXml = activities.map((act, index) => {
-                const actId = generateUUID();
+            // 3. Crear Secuencia Unificada de Nodos (Inicio -> Tareas -> Fin)
+            const flowNodes = [];
+            let currentX = 120;
+
+            // Añadir Evento de Inicio (Asignado al carril del primer rol)
+            const firstRole = activities[0]?.responsables[0] || roles[0];
+            const firstLane = laneMap[firstRole];
+            flowNodes.push({
+                id: generateUUID(),
+                name: 'Inicio',
+                type: 'start',
+                x: currentX,
+                y: firstLane.centerY - (EVENT_SIZE / 2),
+                w: EVENT_SIZE,
+                h: EVENT_SIZE,
+                centerY: firstLane.centerY,
+                laneId: firstLane.id
+            });
+            currentX += EVENT_SIZE + SPACING;
+
+            // Añadir Tareas
+            activities.forEach(act => {
                 const role = act.responsables[0] || roles[0];
-                const laneInfo = laneMap[role] || { y: 0 };
-                const yPos = laneInfo.y + 25;
-                
-                activityMap[index] = { id: actId, x: xCoord, y: yPos };
-                
-                // Formatear saltos de línea de la descripción para que Bizagi los pinte bien en su editor HTML interno
-                const htmlAction = cleanXmlString(act.action).replace(/\n/g, '&lt;br/&gt;');
-                
-                let xml = `        <Activity Id="${actId}" Name="${cleanXmlString(act.name)}">\n          <Description>&lt;p&gt;${htmlAction}&lt;/p&gt;</Description>\n          <Implementation>\n            <Task />\n          </Implementation>\n          <Documentation>&lt;p&gt;${htmlAction}&lt;/p&gt;</Documentation>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="65" Width="110" BorderColor="-16553830" FillColor="-1249281">\n              <Coordinates XCoordinate="${xCoord}" YCoordinate="${yPos}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
-                xCoord += 220;
-                return xml;
+                const lane = laneMap[role];
+                flowNodes.push({
+                    id: generateUUID(),
+                    name: act.name,
+                    type: 'task',
+                    x: currentX,
+                    y: lane.centerY - (TASK_H / 2),
+                    w: TASK_W,
+                    h: TASK_H,
+                    centerY: lane.centerY,
+                    activity: act,
+                    role: role,
+                    laneId: lane.id
+                });
+                currentX += TASK_W + SPACING;
+            });
+
+            // Añadir Evento de Fin (Asignado al carril del último rol activo)
+            const lastRole = activities[activities.length - 1]?.responsables[0] || roles[0];
+            const lastLane = laneMap[lastRole];
+            flowNodes.push({
+                id: generateUUID(),
+                name: 'Fin',
+                type: 'end',
+                x: currentX,
+                y: lastLane.centerY - (EVENT_SIZE / 2),
+                w: EVENT_SIZE,
+                h: EVENT_SIZE,
+                centerY: lastLane.centerY,
+                laneId: lastLane.id
+            });
+
+            // 4. Transformar Nodos a XML de Actividades
+            let activitiesXml = flowNodes.map(node => {
+                const nameEscaped = cleanXmlString(node.name);
+                if (node.type === 'start') {
+                    return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Event>\n            <StartEvent Trigger="None" />\n          </Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-10311914" FillColor="-1638505">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
+                } else if (node.type === 'end') {
+                    return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Event>\n            <EndEvent Result="None" />\n          </Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-6750208" FillColor="-1135958">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
+                } else {
+                    const htmlAction = cleanXmlString(node.activity.action).replace(/\n/g, '&lt;br/&gt;');
+                    return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Description>&lt;p&gt;${htmlAction}&lt;/p&gt;</Description>\n          <Implementation>\n            <Task />\n          </Implementation>\n          <Documentation>&lt;p&gt;${htmlAction}&lt;/p&gt;</Documentation>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-16553830" FillColor="-1249281">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n          <ExtendedAttributes>\n            <ExtendedAttribute Name="BizagiAccountables" Value="${cleanXmlString(node.role)}" />\n          </ExtendedAttributes>\n        </Activity>`;
+                }
             }).join('\n');
 
-            // Transiciones en cadena (Flujo secuencial continuo)
+            // 5. Generar Conexiones Secuenciales (Flechas de Transición)
             let transitionsXml = [];
-            for (let i = 0; i < activities.length - 1; i++) {
-                const fromAct = activityMap[i];
-                const toAct = activityMap[i + 1];
-                transitionsXml.push(`        <Transition Id="${generateUUID()}" From="${fromAct.id}" To="${toAct.id}">\n          <ConnectorGraphicsInfos>\n            <ConnectorGraphicsInfo ToolId="BizAgi_Process_Modeler" BorderColor="-16777216">\n              <Coordinates XCoordinate="${fromAct.x + 110}" YCoordinate="${fromAct.y + 32}" />\n              <Coordinates XCoordinate="${toAct.x}" YCoordinate="${toAct.y + 32}" />\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphicsInfos>\n        </Transition>`);
+            for (let i = 0; i < flowNodes.length - 1; i++) {
+                const fromNode = flowNodes[i];
+                const toNode = flowNodes[i + 1];
+                
+                const fromX = fromNode.x + fromNode.w;
+                const fromY = fromNode.centerY;
+                const toX = toNode.x;
+                const toY = toNode.centerY;
+                
+                let coordsXml = '';
+                if (Math.abs(fromY - toY) < 5) {
+                    // Misma altura lineal
+                    coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
+                } else {
+                    // Enrutamiento ortogonal en escalera
+                    const midX = fromX + (toX - fromX) / 2;
+                    coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${toY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
+                }
+
+                transitionsXml.push(`        <Transition Id="${generateUUID()}" From="${fromNode.id}" To="${toNode.id}">\n          <ConnectorGraphicsInfos>\n            <ConnectorGraphicsInfo ToolId="BizAgi_Process_Modeler" BorderColor="-16777216">\n${coordsXml}\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphicsInfos>\n        </Transition>`);
             }
 
             return `<?xml version="1.0" encoding="utf-8"?>
@@ -250,7 +341,7 @@
     <Description>${cleanXmlString(procName)}</Description>
   </PackageHeader>
   <RedefinableHeader>
-    <Author>Made - madeomade</Author>
+    <Author>madeomade Modelador</Author>
     <Version>1.0</Version>
     <Countrykey>ES</Countrykey>
   </RedefinableHeader>
@@ -263,7 +354,7 @@ ${participantsXml}
 ${lanesXml}
       </Lanes>
       <NodeGraphicsInfos>
-        <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${roles.length * 120}" Width="1900" BorderColor="-16777216" FillColor="-1">
+        <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${roles.length * LANE_H}" Width="${currentX + 150}" BorderColor="-16777216" FillColor="-1">
           <Coordinates XCoordinate="30" YCoordinate="30" />
         </NodeGraphicsInfo>
       </NodeGraphicsInfos>
@@ -282,29 +373,48 @@ ${transitionsXml.join('\n')}
 </Package>`;
         }
 
-        function generateBPMN(processUuid, procName, activities, roles) {
-            let activitiesXml = '';
-            let activityIds = [];
-
-            activities.forEach(act => {
-                const actId = 'Activity_' + generateUUID().replace(/-/g, '_');
-                activityIds.push(actId);
-                const cleanAction = cleanXmlString(act.action).replace(/\n/g, ' ');
-                const primaryPerformer = act.responsables[0] || 'Sin asignar';
-                
-                activitiesXml += `    <task id="${actId}" name="${cleanXmlString(act.name)}">\n      <documentation>${cleanAction}</documentation>\n      <extensionElements>\n        <bizagi:BizagiExtensions xmlns:bizagi="http://www.bizagi.com/bpmn20">\n          <bizagi:BizagiProperties>\n            <bizagi:BizagiProperty name="performer" value="${cleanXmlString(primaryPerformer)}" />\n          </bizagi:BizagiProperties>\n        </bizagi:BizagiExtensions>\n      </extensionElements>\n    </task>\n`;
+        function generateBPMN(procName, activities, roles) {
+            const processUuid = 'Process_' + generateUUID().replace(/-/g, '_');
+            const flowElements = [];
+            
+            // Replicar secuencia ordenada en el estándar BPMN
+            flowElements.push({ id: 'StartEvent_01', name: 'Inicio', type: 'start' });
+            activities.forEach((act, idx) => {
+                flowElements.push({
+                    id: `Activity_${idx}_${generateUUID().replace(/-/g, '_').substring(0,4)}`,
+                    name: act.name,
+                    type: 'task',
+                    action: act.action
+                });
             });
+            flowElements.push({ id: 'EndEvent_01', name: 'Fin', type: 'end' });
 
+            let elementsXml = '';
             let flowsXml = '';
-            for (let i = 0; i < activityIds.length - 1; i++) {
-                flowsXml += `    <sequenceFlow id="Flow_${i}" sourceRef="${activityIds[i]}" targetRef="${activityIds[i+1]}" />\n`;
-            }
+
+            flowElements.forEach((node, i) => {
+                const nameEsc = cleanXmlString(node.name);
+                let incoming = i > 0 ? `      <incoming>Flow_${i-1}</incoming>\n` : '';
+                let outgoing = i < flowElements.length - 1 ? `      <outgoing>Flow_${i}</outgoing>\n` : '';
+
+                if (node.type === 'start') {
+                    elementsXml += `    <startEvent id="${node.id}" name="${nameEsc}">\n${outgoing}    </startEvent>\n`;
+                } else if (node.type === 'end') {
+                    elementsXml += `    <endEvent id="${node.id}" name="${nameEsc}">\n${incoming}    </endEvent>\n`;
+                } else {
+                    const docEsc = cleanXmlString(node.action).replace(/\n/g, ' ');
+                    elementsXml += `    <task id="${node.id}" name="${nameEsc}">\n      <documentation>${docEsc}</documentation>\n${incoming}${outgoing}    </task>\n`;
+                }
+
+                if (i < flowElements.length - 1) {
+                    flowsXml += `    <sequenceFlow id="Flow_${i}" sourceRef="${node.id}" targetRef="${flowElements[i+1].id}" />\n`;
+                }
+            });
 
             return `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.org/schema/bpmn" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
-  <process id="Process_1" name="${cleanXmlString(procName)}" isExecutable="false">
-${activitiesXml}${flowsXml}
-  </process>
+  <process id="${processUuid}" name="${cleanXmlString(procName)}" isExecutable="false">
+${elementsXml}${flowsXml}  </process>
 </definitions>`;
         }
 
@@ -314,7 +424,7 @@ ${activitiesXml}${flowsXml}
             const desc = document.getElementById('processDescription').value;
 
             if (!id || !name || !desc.trim()) {
-                showMsg('Por favor, rellena todos los campos del formulario.', 'error');
+                showMsg('⚠️ Por favor, rellena todos los campos del formulario.', 'error');
                 return;
             }
 
@@ -322,20 +432,21 @@ ${activitiesXml}${flowsXml}
                 const { activities, roles } = parseText(desc);
 
                 if (activities.length === 0) {
-                    showMsg('No se detectó ninguna actividad válida. Usa el formato "1. Nombre de actividad".', 'error');
+                    showMsg('❌ No se detectaron actividades válidas. Revisa el formato numérico.', 'error');
                     return;
                 }
 
                 processData.xpdl = generateXPDL(id, name, activities, roles);
-                processData.bpmn = generateBPMN(id, name, activities, roles);
+                processData.bpmn = generateBPMN(name, activities, roles);
 
                 document.getElementById('xpdlOutput').textContent = processData.xpdl;
                 document.getElementById('bpmnOutput').textContent = processData.bpmn;
 
-                showMsg(`¡Éxito! Se procesaron ${activities.length} actividades en ${roles.length} carriles de responsables.`, 'success');
+                showMsg(`✅ ¡Éxito! Generadas ${activities.length} actividades estructuradas en ${roles.length} carril(es) con conectores completos.`, 'success');
 
             } catch (err) {
-                showMsg('Error crítico procesando el texto: ' + err.message, 'error');
+                showMsg('💥 Error crítico procesando el modelo: ' + err.message, 'error');
+                console.error(err);
             }
         }
 
@@ -347,17 +458,17 @@ ${activitiesXml}${flowsXml}
         }
 
         function clearForm() {
-            document.getElementById('processId').value = 'SGP_VIAJE_P01';
+            document.getElementById('processId').value = 'SGP_NUEVO_P01';
             document.getElementById('processName').value = '';
             document.getElementById('processDescription').value = '';
-            document.getElementById('xpdlOutput').textContent = '';
-            document.getElementById('bpmnOutput').textContent = '';
+            document.getElementById('xpdlOutput').textContent = 'Presiona Generar Modelos...';
+            document.getElementById('bpmnOutput').textContent = 'Presiona Generar Modelos...';
         }
 
         function downloadFile(type) {
             const content = type === 'xpdl' ? processData.xpdl : processData.bpmn;
             if (!content) {
-                showMsg('Primero debes generar el modelo antes de poder descargarlo.', 'error');
+                showMsg('⚠️ Primero debes generar el modelo antes de guardarlo.', 'error');
                 return;
             }
             const blob = new Blob([content], { type: 'application/xml' });
