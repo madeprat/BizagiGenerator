@@ -134,24 +134,69 @@
                 <p>Para mapear correctamente la <strong>Matriz RACI</strong> en Bizagi de forma automatizada, estructura cada una de las actividades en el panel izquierdo respetando el siguiente formato:</p>
                 
                 <div class="format-example">
-                    <strong>Estructura por Actividad:</strong>
+                    <strong>Estructura por Actividad (flujo lineal):</strong>
                     <pre>1. Nombre de la Actividad o Tarea
-Responsable: Rol principal (Determina el carril / Lane)
+Responsable: Rol principal (determina el carril / Lane)
 Ejecutante: Persona o rol que ejecuta la acción
 Consultado: Persona o rol que aporta feedback
 Informado: Persona o rol notificado al finalizar
 Acción: Descripción técnica detallada del proceso.</pre>
                 </div>
 
+                <h3>🔀 Parallel Split / Join</h3>
+                <p>Repite el mismo número en varias tareas consecutivas. El generador inserta automáticamente un <strong>Parallel Split</strong> antes y un <strong>Parallel Join</strong> después.</p>
+                <div class="format-example">
+                    <strong>Ejemplo Parallel:</strong>
+                    <pre>2. Registro y revisión
+Responsable: Coordinador
+Acción: ...
+
+3. Evaluación funcional
+Responsable: Coordinador
+Acción: ...
+
+3. Evaluación técnica
+Responsable: Área Técnica
+Acción: ...
+
+3. Validación de prioridad
+Responsable: Área Solicitante
+Acción: ...
+
+4. Consolidación
+Responsable: Coordinador
+Acción: ...</pre>
+                </div>
+
+                <h3>❓ XOR (Decisión SI / NO)</h3>
+                <p>Añade <code>DECISION: [pregunta]</code> al final de la tarea que origina la bifurcación. Las dos tareas siguientes llevan <code>[SI]</code> o <code>[NO]</code> como prefijo y el <strong>mismo número</strong>. Si tras ambas ramas aparece un número nuevo sin prefijo, el generador inserta un <strong>XOR Join</strong> automático.</p>
+                <div class="format-example">
+                    <strong>Ejemplo XOR con convergencia:</strong>
+                    <pre>4. Consolidación
+Responsable: Coordinador
+Acción: El coordinador consolida los resultados.
+DECISION: ¿La solicitud es viable?
+
+5. [SI] Preparación de resolución favorable
+Responsable: Coordinador
+Acción: ...
+
+5. [NO] Comunicación de no viabilidad
+Responsable: Área Técnica
+Acción: ...
+
+6. Cierre y notificación final
+Responsable: Coordinador
+Acción: ...</pre>
+                </div>
+
                 <h3>💡 Comportamiento en Bizagi:</h3>
                 <ul>
-                    <li><strong>Responsable:</strong> Se utiliza para agrupar la actividad dentro de su correspondiente carril o <em>Lane</em> visual en el diagrama.</li>
-                    <li><strong>Ejecutante, Consultado e Informado:</strong> Son <code>ExtendedAttributes</code> nativos de Bizagi (<code>BizagiPerformers</code>, <code>BizagiConsulted</code>, y <code>BizagiInformed</code>). Al importar el archivo XPDL, estos datos se reflejarán de inmediato en las propiedades avanzadas del objeto.</li>
-                    <li><strong>Acción:</strong> Todo el texto libre debajo de esta etiqueta es la documentación de la actividad.</li>
+                    <li><strong>Responsable:</strong> Determina el carril (Lane) donde se dibuja la tarea.</li>
+                    <li><strong>Ejecutante, Consultado e Informado:</strong> Se mapean como <code>ExtendedAttributes</code> RACI nativos de Bizagi.</li>
+                    <li><strong>Acción:</strong> Se vuelca como Documentation de la actividad (acepta múltiples líneas).</li>
+                    <li><strong>DECISION:</strong> Genera un gateway XOR. Debe ir dentro o tras el bloque Acción.</li>
                 </ul>
-
-                <h3>⚙️ Nota:</h3>
-                <p>Esta versión de BizagiGenerator genera un proceso de Nivel 1 de abstracción (sin usar compuertas). </p>
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" style="flex:none; width:auto; padding:10px 20px;" onclick="closeModal()">Entendido</button>
@@ -163,19 +208,50 @@ Acción: Descripción técnica detallada del proceso.</pre>
         let processData = { xpdl: '', bpmn: '' };
 
         // Ejemplo por defecto
-        document.getElementById('processDescription').value = `1. Envío a Recursos Humanos
-Responsable: Empleado
-Ejecutante: Juan Perez, Administrador
-Consultado: Supervisor de Área
-Informado: Director General
-Acción: Remitir la solicitud aprobada a Recursos Humanos para su registro y tramitación.
+        document.getElementById('processDescription').value = `1. Recepción inicial de la solicitud
+Responsable: Área Solicitante
+Acción: El área promotora inicia el proceso mediante la creación formal de una solicitud interna, describiendo la necesidad, el objetivo esperado y adjuntando documentación de soporte.
 
-2. Revisión y registro interno
-Responsable: Departamento de Recursos Humanos
-Ejecutante: Técnico de Personal
-Consultado: Jefe de Contabilidad
-Informado: Empleado
-Acción: Validar la documentación adjunta y proceder con la asignación presupuestaria.`;
+2. Registro y revisión preliminar
+Responsable: Coordinador del Proceso
+Acción: El coordinador recibe la solicitud, verifica que contiene la información mínima necesaria y activa las evaluaciones paralelas correspondientes.
+
+3. Evaluación funcional de la solicitud
+Responsable: Coordinador del Proceso
+Consultado: Área Solicitante
+Acción: Se analiza la solicitud desde el punto de vista funcional y operativo.
+
+3. Evaluación técnica o de viabilidad
+Responsable: Área Técnica
+Consultado: Coordinador del Proceso
+Acción: El área técnica analiza la viabilidad en cuanto a recursos, capacidades y restricciones técnicas.
+
+3. Validación de prioridad y alineamiento
+Responsable: Área Solicitante
+Informado: Coordinador del Proceso
+Acción: El área promotora confirma la prioridad y el alineamiento de la solicitud con los objetivos internos.
+
+4. Consolidación de evaluaciones y propuesta de resolución
+Responsable: Coordinador del Proceso
+Acción: El coordinador recopila las conclusiones de las evaluaciones paralelas y elabora una propuesta.
+DECISION: ¿La solicitud es viable y puede continuar hacia resolución favorable?
+
+5. [SI] Preparación de la resolución favorable
+Responsable: Coordinador del Proceso
+Consultado: Área Técnica
+Informado: Área Solicitante
+Acción: El coordinador prepara la resolución favorable, define condiciones y la remite al área promotora.
+
+5. [NO] Comunicación de no viabilidad o cierre alternativo
+Responsable: Área Técnica
+Consultado: Coordinador del Proceso
+Acción: El área técnica documenta los motivos del cierre alternativo y comunica las causas al solicitante.
+
+6. Confirmación final y cierre de la solicitud
+Responsable: Área Solicitante
+Consultado: Área Técnica
+Informado: Coordinador del Proceso
+Acción: El área promotora confirma la aceptación y da por cerrada formalmente la solicitud.`;
 
         function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -193,218 +269,542 @@ Acción: Validar la documentación adjunta y proceder con la asignación presupu
                       .replace(/'/g, '&apos;');
         }
 
-        function parseText(text) {
+        // ─────────────────────────────────────────────────────────────
+        // PASO 1: parsear líneas → lista plana de actividades raw
+        // ─────────────────────────────────────────────────────────────
+        function parseRawActivities(text) {
             const lines = text.split('\n');
             const activities = [];
             const roles = new Set();
-            let currentActivity = null;
-            let isCapturingAction = false;
+            let current = null;
+            let capturingAction = false;
 
             for (let rawLine of lines) {
-                let lineStripped = rawLine.replace(/•/g, '-').replace(/\t/g, ' ').trim();
+                let line = rawLine.replace(/•/g, '-').replace(/\t/g, ' ').trim();
 
-                if (!lineStripped) {
-                    if (currentActivity && isCapturingAction && currentActivity.action) {
-                        currentActivity.action += '\n';
-                    }
+                if (!line) {
+                    if (current && capturingAction && current.action) current.action += '\n';
                     continue;
                 }
 
-                const numMatch = lineStripped.match(/^\s*(\d+)\.\s*(.+?)$/);
+                // Línea de tarea: "N. [prefijo] Nombre"  (prefijo opcional: [SI] o [NO])
+                const numMatch = line.match(/^(\d+)\.\s*(\[SI\]|\[NO\])?\s*(.+?)$/i);
                 if (numMatch) {
-                    if (currentActivity) {
-                        currentActivity.action = currentActivity.action.trim();
-                        activities.push(currentActivity);
-                    }
-                    currentActivity = {
+                    if (current) { current.action = current.action.trim(); activities.push(current); }
+                    const branch = numMatch[2] ? numMatch[2].toUpperCase().replace(/[\[\]]/g, '') : null; // 'SI', 'NO' o null
+                    current = {
                         num: parseInt(numMatch[1]),
-                        name: numMatch[2].trim(),
+                        branch,                  // null | 'SI' | 'NO'
+                        name: numMatch[3].trim(),
                         responsables: [],
                         ejecutante: '',
                         consultado: '',
                         informado: '',
-                        action: ''
+                        action: '',
+                        decision: null           // texto de DECISION: si existe
                     };
-                    isCapturingAction = false;
+                    capturingAction = false;
                     continue;
                 }
 
-                const respMatch = lineStripped.match(/^Responsables?:\s*(.+?)$/i);
-                if (respMatch && currentActivity) {
-                    const respText = respMatch[1];
-                    const respList = respText.split(/\s+y\s+|\s*,\s*/);
-                    respList.forEach(resp => {
-                        const cleanResp = resp.trim();
-                        if (cleanResp) {
-                            currentActivity.responsables.push(cleanResp);
-                            roles.add(cleanResp);
-                        }
+                if (!current) continue;
+
+                const respMatch = line.match(/^Responsables?:\s*(.+)$/i);
+                if (respMatch) {
+                    respMatch[1].split(/\s+y\s+|\s*,\s*/).forEach(r => {
+                        const cr = r.trim(); if (cr) { current.responsables.push(cr); roles.add(cr); }
                     });
-                    isCapturingAction = false;
-                    continue;
+                    capturingAction = false; continue;
                 }
 
-                const ejecutanteMatch = lineStripped.match(/^Ejecutantes?:\s*(.+?)$/i);
-                if (ejecutanteMatch && currentActivity) {
-                    currentActivity.ejecutante = ejecutanteMatch[1].trim();
-                    isCapturingAction = false;
-                    continue;
-                }
+                const ejMatch = line.match(/^Ejecutantes?:\s*(.+)$/i);
+                if (ejMatch) { current.ejecutante = ejMatch[1].trim(); capturingAction = false; continue; }
 
-                const consultadoMatch = lineStripped.match(/^Consultados?:\s*(.+?)$/i);
-                if (consultadoMatch && currentActivity) {
-                    currentActivity.consultado = consultadoMatch[1].trim();
-                    isCapturingAction = false;
-                    continue;
-                }
+                const consMatch = line.match(/^Consultados?:\s*(.+)$/i);
+                if (consMatch) { current.consultado = consMatch[1].trim(); capturingAction = false; continue; }
 
-                const informadoMatch = lineStripped.match(/^Informados?:\s*(.+?)$/i);
-                if (informadoMatch && currentActivity) {
-                    currentActivity.informado = informadoMatch[1].trim();
-                    isCapturingAction = false;
-                    continue;
-                }
+                const infMatch = line.match(/^Informados?:\s*(.+)$/i);
+                if (infMatch) { current.informado = infMatch[1].trim(); capturingAction = false; continue; }
 
-                const actionMatch = lineStripped.match(/^Acción:\s*(.+?)$/i);
-                if (actionMatch && currentActivity) {
-                    currentActivity.action = actionMatch[1].trim();
-                    isCapturingAction = true;
-                    continue;
-                }
+                const actMatch = line.match(/^Acci[oó]n:\s*(.+)$/i);
+                if (actMatch) { current.action = actMatch[1].trim(); capturingAction = true; continue; }
 
-                if (currentActivity && isCapturingAction) {
-                    if (currentActivity.action) {
-                        if (currentActivity.action.endsWith('\n')) {
-                            currentActivity.action += lineStripped;
-                        } else {
-                            currentActivity.action += '\n' + lineStripped;
-                        }
-                    } else {
-                        currentActivity.action = lineStripped;
-                    }
+                // DECISION: debe aparecer dentro del bloque Acción (o tras él)
+                const decMatch = line.match(/^DECISION:\s*(.+)$/i);
+                if (decMatch) { current.decision = decMatch[1].trim(); capturingAction = false; continue; }
+
+                if (capturingAction) {
+                    current.action += current.action.endsWith('\n') ? line : '\n' + line;
                 }
             }
 
-            if (currentActivity) {
-                currentActivity.action = currentActivity.action.trim();
-                activities.push(currentActivity);
-            }
-
-            if (roles.size === 0) roles.add("Proceso General");
-
+            if (current) { current.action = current.action.trim(); activities.push(current); }
+            if (roles.size === 0) roles.add('Proceso General');
             return { activities, roles: Array.from(roles).sort() };
         }
 
-        function generateXPDL(procId, procName, activities, roles) {
-            const packageId = generateUUID();
+        // ─────────────────────────────────────────────────────────────
+        // PASO 2: convertir lista plana → lista de NODOS con gateways
+        // Tipos de nodo: 'start' | 'task' | 'parallel-split' |
+        //                'parallel-join' | 'xor-split' | 'xor-join' | 'end'
+        // ─────────────────────────────────────────────────────────────
+        function buildFlowNodes(activities) {
+            const errors = [];
+            const nodes = [];   // lista final de nodos del flujo
+            const i_max = activities.length;
+            let i = 0;
+
+            while (i < i_max) {
+                const act = activities[i];
+                const nextAct = activities[i + 1] || null;
+
+                // ── Detectar PARALLEL: mismo número, sin branch ──────
+                if (!act.branch && nextAct && nextAct.num === act.num && !nextAct.branch) {
+                    // recopilar todas las tareas del mismo número
+                    const group = [];
+                    while (i < i_max && activities[i].num === act.num && !activities[i].branch) {
+                        group.push(activities[i]); i++;
+                    }
+                    if (group.length < 2) {
+                        errors.push(`Número ${act.num} aparece una sola vez sin prefijo [SI]/[NO]. ¿Olvidaste una tarea paralela?`);
+                    }
+                    nodes.push({ type: 'parallel-split', id: generateUUID() });
+                    group.forEach(g => nodes.push({ type: 'task', id: generateUUID(), activity: g }));
+                    nodes.push({ type: 'parallel-join', id: generateUUID() });
+                    continue;
+                }
+
+                // ── Detectar XOR: tarea con DECISION: ───────────────
+                if (act.decision) {
+                    nodes.push({ type: 'task', id: generateUUID(), activity: act }); i++;
+                    nodes.push({ type: 'xor-split', id: generateUUID(), label: act.decision });
+
+                    // recopilar el par [SI] / [NO]
+                    const xorNum = activities[i]?.num;
+                    const siActs = [], noActs = [];
+                    while (i < i_max && activities[i].num === xorNum) {
+                        if (activities[i].branch === 'SI') siActs.push(activities[i]);
+                        else if (activities[i].branch === 'NO') noActs.push(activities[i]);
+                        else { errors.push(`Tarea ${activities[i].num} sin [SI]/[NO] justo tras DECISION:`); }
+                        i++;
+                    }
+                    if (siActs.length === 0) errors.push('Falta rama [SI] tras DECISION:');
+                    if (noActs.length === 0) errors.push('Falta rama [NO] tras DECISION:');
+
+                    // --- rama SI: consume tareas siguientes hasta que NO haya más
+                    //     o hasta que el número coincida con la siguiente de la rama NO
+                    // Determinamos si hay convergencia: ambas ramas llegan al mismo num siguiente
+                    const nextNumAfterXor = activities[i]?.num || null;
+
+                    nodes.push({ type: 'xor-branch-si-start' });
+                    siActs.forEach(a => nodes.push({ type: 'task', id: generateUUID(), activity: a }));
+
+                    // Tareas de continuación de rama SI (sin branch, número > xorNum)
+                    // pero solo si NO hay convergencia (se determina abajo)
+                    const siContinuation = [];
+                    let jSI = i;
+                    while (jSI < i_max && !activities[jSI].branch && activities[jSI].num !== nextNumAfterXor) {
+                        // si hay convergencia, nextNumAfterXor marcará el join → no consumir aquí
+                        // si no hay convergencia, consumimos todo lo que quede tras [SI]
+                        siContinuation.push(activities[jSI]); jSI++;
+                    }
+
+                    // ¿Convergen? Las dos ramas deben llegar al mismo número
+                    const noHasContinuation = (i < i_max && activities[i] && !activities[i].branch);
+                    const siHasContinuation = siContinuation.length > 0;
+                    const converge = siHasContinuation && noHasContinuation &&
+                        siContinuation[siContinuation.length - 1]?.num < (activities[i]?.num || Infinity) &&
+                        nextNumAfterXor !== null;
+
+                    // Caso convergencia implícita: ambas ramas terminan y el num siguiente es el mismo
+                    // Simplificación determinista: si tras [SI]+[NO] hay tareas sin branch → convergen
+                    const hasJoin = (i < i_max && !activities[i]?.branch);
+
+                    siContinuation.forEach(a => nodes.push({ type: 'task', id: generateUUID(), activity: a }));
+                    if (!hasJoin) nodes.push({ type: 'end', id: generateUUID() }); // rama SI termina sola
+                    nodes.push({ type: 'xor-branch-si-end' });
+
+                    nodes.push({ type: 'xor-branch-no-start' });
+                    noActs.forEach(a => nodes.push({ type: 'task', id: generateUUID(), activity: a }));
+                    if (!hasJoin) nodes.push({ type: 'end', id: generateUUID() }); // rama NO termina sola
+                    nodes.push({ type: 'xor-branch-no-end' });
+
+                    if (hasJoin) {
+                        nodes.push({ type: 'xor-join', id: generateUUID() });
+                    }
+                    continue;
+                }
+
+                // ── Tarea normal ─────────────────────────────────────
+                nodes.push({ type: 'task', id: generateUUID(), activity: act });
+                i++;
+            }
+
+            return { nodes, errors };
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Función pública que reemplaza al anterior parseText()
+        // ─────────────────────────────────────────────────────────────
+        function parseText(text) {
+            const { activities, roles } = parseRawActivities(text);
+            const { nodes, errors } = buildFlowNodes(activities);
+            if (errors.length > 0) throw new Error('Errores de formato:\n' + errors.join('\n'));
+            return { activities, nodes, roles };
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Helpers de geometría y XML de nodos
+        // ─────────────────────────────────────────────────────────────
+        function makeTransition(fromNode, toNode, isConditional = false) {
+            const fromX = fromNode.x + fromNode.w;
+            const fromY = fromNode.centerY;
+            const toX   = toNode.x;
+            const toY   = toNode.centerY;
+            let coordsXml;
+            if (Math.abs(fromY - toY) < 5) {
+                coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
+            } else {
+                const midX = fromX + (toX - fromX) / 2;
+                coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${toY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
+            }
+            const condXml = isConditional
+                ? `\n          <Condition Type="CONDITION"><Expression /></Condition>`
+                : `\n          <Condition />`;
+            return `        <Transition Id="${generateUUID()}" From="${fromNode.id}" To="${toNode.id}">${condXml}\n          <ConnectorGraphicsInfos>\n            <ConnectorGraphicsInfo ToolId="BizAgi_Process_Modeler" BorderColor="-16777216">\n${coordsXml}\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphicsInfos>\n        </Transition>`;
+        }
+
+        function xmlTask(node) {
+            const n = cleanXmlString(node.name);
+            const act = node.activity;
+            const htmlAction = cleanXmlString(act.action).replace(/\n/g, '&lt;br/&gt;');
+            const role = act.responsables[0] || '';
+            let ext = `\n            <ExtendedAttribute Name="BizagiAccountables" Value="${cleanXmlString(role)}" />`;
+            if (act.ejecutante) ext += `\n            <ExtendedAttribute Name="BizagiPerformers" Value="${cleanXmlString(act.ejecutante)}" />`;
+            if (act.consultado) ext += `\n            <ExtendedAttribute Name="BizagiConsulted" Value="${cleanXmlString(act.consultado)}" />`;
+            if (act.informado)  ext += `\n            <ExtendedAttribute Name="BizagiInformed" Value="${cleanXmlString(act.informado)}" />`;
+            return `        <Activity Id="${node.id}" Name="${n}">\n          <Description>&lt;p&gt;${htmlAction}&lt;/p&gt;</Description>\n          <Implementation><Task /></Implementation>\n          <Documentation>&lt;p&gt;${htmlAction}&lt;/p&gt;</Documentation>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-16553830" FillColor="-1249281">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n          <ExtendedAttributes>${ext}\n          </ExtendedAttributes>\n        </Activity>`;
+        }
+
+        function xmlStart(node) {
+            return `        <Activity Id="${node.id}" Name="Inicio">\n          <Event><StartEvent Trigger="None" /></Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-10311914" FillColor="-1638505">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
+        }
+
+        function xmlEnd(node) {
+            return `        <Activity Id="${node.id}" Name="Fin">\n          <Event><EndEvent Result="None" /></Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-6750208" FillColor="-1135958">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
+        }
+
+        function xmlGateway(node, gwType) {
+            // gwType: 'Parallel' | 'Exclusive'  (XOR = Exclusive en XPDL)
+            return `        <Activity Id="${node.id}" Name="">\n          <Route GatewayType="${gwType}" />\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-5855715" FillColor="-52">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n          <ExtendedAttributes />\n        </Activity>`;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // generateXPDL — trabaja sobre la lista de nodos del parser
+        // ─────────────────────────────────────────────────────────────
+        function generateXPDL(procId, procName, nodes, roles) {
+            const packageId   = generateUUID();
             const processUuid = generateUUID();
-            const poolId = generateUUID();
-            const timestamp = new Date().toISOString();
-            
-            const LANE_H = 120, TASK_W = 110, TASK_H = 65, EVENT_SIZE = 30, SPACING = 80;
+            const poolId      = generateUUID();
+            const timestamp   = new Date().toISOString();
 
-            let participantsXml = roles.map(role => {
-                return `    <Participant Id="${generateUUID()}" Name="${cleanXmlString(role)}">\n      <ParticipantType Type="ROLE" />\n      <Description>${cleanXmlString(role)}</Description>\n    </Participant>`;
-            }).join('\n');
+            const LANE_H = 130, TASK_W = 110, TASK_H = 65;
+            const EVENT_SIZE = 30, GW_SIZE = 40, SPACING = 80;
 
-            let laneMap = {};
+            // ── Participants + laneMap ───────────────────────────────
+            const participantMap = {}; // role → uuid
+            roles.forEach(r => { participantMap[r] = generateUUID(); });
+
+            const participantsXml = roles.map(r =>
+                `    <Participant Id="${participantMap[r]}" Name="${cleanXmlString(r)}">\n      <ParticipantType Type="ROLE" />\n      <Description>${cleanXmlString(r)}</Description>\n      <ExtendedAttributes><ExtendedAttribute Name="${r.replace(/\s+/g,'')}" /></ExtendedAttributes>\n    </Participant>`
+            ).join('\n');
+
+            const laneMap = {};
             let yCoord = 0;
-            let lanesXml = roles.map(role => {
+            const lanesXml = roles.map(r => {
                 const laneId = generateUUID();
-                laneMap[role] = { id: laneId, y: yCoord, centerY: yCoord + (LANE_H / 2) };
-                let xml = `        <Lane Id="${laneId}" Name="${cleanXmlString(role)}" ParentPool="${poolId}">\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${LANE_H}" Width="2500" BorderColor="-11513776" FillColor="-1">\n              <Coordinates XCoordinate="50" YCoordinate="${yCoord}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Lane>`;
+                laneMap[r] = { id: laneId, y: yCoord, centerY: yCoord + LANE_H / 2 };
+                const xml = `        <Lane Id="${laneId}" Name="${cleanXmlString(r)}" ParentPool="${poolId}">\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${LANE_H}" Width="2500" BorderColor="-11513776" FillColor="-1">\n              <Coordinates XCoordinate="50" YCoordinate="${yCoord}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Lane>`;
                 yCoord += LANE_H;
                 return xml;
             }).join('\n');
 
-            const flowNodes = [];
-            let currentX = 120;
+            const defaultLane = laneMap[roles[0]];
 
-            const firstRole = activities[0]?.responsables[0] || roles[0];
-            const firstLane = laneMap[firstRole];
-            flowNodes.push({
-                id: generateUUID(),
-                name: 'Inicio',
-                type: 'start',
-                x: currentX,
-                y: firstLane.centerY - (EVENT_SIZE / 2),
-                w: EVENT_SIZE,
-                h: EVENT_SIZE,
-                centerY: firstLane.centerY,
-                laneId: firstLane.id
-            });
-            currentX += EVENT_SIZE + SPACING;
+            // ── Asignar coordenadas a cada nodo ──────────────────────
+            // Procesamos los nodos enriqueciendo con x/y/w/h/centerY
+            // Para branches paralelas y XOR compartimos la misma X dentro del grupo
+            let curX = 120;
 
-            activities.forEach(act => {
-                const role = act.responsables[0] || roles[0];
-                const lane = laneMap[role];
-                flowNodes.push({
-                    id: generateUUID(),
-                    name: act.name,
-                    type: 'task',
-                    x: currentX,
-                    y: lane.centerY - (TASK_H / 2),
-                    w: TASK_W,
-                    h: TASK_H,
-                    centerY: lane.centerY,
-                    activity: act,
-                    role: role,
-                    laneId: lane.id
-                });
-                currentX += TASK_W + SPACING;
-            });
+            // Primera pasada: identificar grupos paralelos y XOR para calcular X
+            // Usamos un índice y procesamos en orden
+            const positioned = []; // nodos con coords asignadas
 
-            const lastRole = activities[activities.length - 1]?.responsables[0] || roles[0];
-            const lastLane = laneMap[lastRole];
-            flowNodes.push({
-                id: generateUUID(),
-                name: 'Fin',
-                type: 'end',
-                x: currentX,
-                y: lastLane.centerY - (EVENT_SIZE / 2),
-                w: EVENT_SIZE,
-                h: EVENT_SIZE,
-                centerY: lastLane.centerY,
-                laneId: lastLane.id
-            });
-
-            let activitiesXml = flowNodes.map(node => {
-                const nameEscaped = cleanXmlString(node.name);
-                if (node.type === 'start') {
-                    return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Event>\n            <StartEvent Trigger="None" />\n          </Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-10311914" FillColor="-1638505">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
-                } else if (node.type === 'end') {
-                    return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Event>\n            <EndEvent Result="None" />\n          </Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-6750208" FillColor="-1135958">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
-                } else {
-                    const htmlAction = cleanXmlString(node.activity.action).replace(/\n/g, '&lt;br/&gt;');
-                    let ramiAttributes = `\n            <ExtendedAttribute Name="BizagiAccountables" Value="${cleanXmlString(node.role)}" />`;
-                    if (node.activity.ejecutante) ramiAttributes += `\n            <ExtendedAttribute Name="BizagiPerformers" Value="${cleanXmlString(node.activity.ejecutante)}" />`;
-                    if (node.activity.consultado) ramiAttributes += `\n            <ExtendedAttribute Name="BizagiConsulted" Value="${cleanXmlString(node.activity.consultado)}" />`;
-                    if (node.activity.informado) ramiAttributes += `\n            <ExtendedAttribute Name="BizagiInformed" Value="${cleanXmlString(node.activity.informado)}" />`;
-
-                    return `        <Activity Id="${node.id}" Name="${nameEscaped}">\n          <Description>&lt;p&gt;${htmlAction}&lt;/p&gt;</Description>\n          <Implementation>\n            <Task />\n          </Implementation>\n          <Documentation>&lt;p&gt;${htmlAction}&lt;/p&gt;</Documentation>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-16553830" FillColor="-1249281">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n          <ExtendedAttributes>${ramiAttributes}\n          </ExtendedAttributes>\n        </Activity>`;
-                }
-            }).join('\n');
-
-            let transitionsXml = [];
-            for (let i = 0; i < flowNodes.length - 1; i++) {
-                const fromNode = flowNodes[i];
-                const toNode = flowNodes[i + 1];
-                const fromX = fromNode.x + fromNode.w;
-                const fromY = fromNode.centerY;
-                const toX = toNode.x;
-                const toY = toNode.centerY;
-                
-                let coordsXml = '';
-                if (Math.abs(fromY - toY) < 5) {
-                    coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
-                } else {
-                    const midX = fromX + (toX - fromX) / 2;
-                    coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${toY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
-                }
-
-                transitionsXml.push(`        <Transition Id="${generateUUID()}" From="${fromNode.id}" To="${toNode.id}">\n          <ConnectorGraphicsInfos>\n            <ConnectorGraphicsInfo ToolId="BizAgi_Process_Modeler" BorderColor="-16777216">
-${coordsXml}\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphicsInfos>\n        </Transition>`);
+            function getLane(act) {
+                if (!act) return defaultLane;
+                const r = act.responsables[0] || roles[0];
+                return laneMap[r] || defaultLane;
             }
+
+            // Nodo de inicio
+            const startNode = { id: generateUUID(), type: 'start', x: curX, w: EVENT_SIZE, h: EVENT_SIZE };
+            const firstTaskNode = nodes.find(n => n.type === 'task');
+            const firstLane = firstTaskNode ? getLane(firstTaskNode.activity) : defaultLane;
+            startNode.centerY = firstLane.centerY;
+            startNode.y = startNode.centerY - EVENT_SIZE / 2;
+            positioned.push(startNode);
+            curX += EVENT_SIZE + SPACING;
+
+            // Procesar nodos del parser
+            let ni = 0;
+            while (ni < nodes.length) {
+                const node = nodes[ni];
+
+                if (node.type === 'task') {
+                    const lane = getLane(node.activity);
+                    const pn = { ...node, x: curX, y: lane.centerY - TASK_H/2, w: TASK_W, h: TASK_H, centerY: lane.centerY };
+                    positioned.push(pn);
+                    curX += TASK_W + SPACING;
+                    ni++;
+
+                } else if (node.type === 'parallel-split') {
+                    // Nodo split en la lane de la primera tarea del grupo
+                    const nextTask = nodes[ni + 1];
+                    const splitLane = nextTask ? getLane(nextTask.activity) : defaultLane;
+                    const pn = { ...node, x: curX, y: splitLane.centerY - GW_SIZE/2, w: GW_SIZE, h: GW_SIZE, centerY: splitLane.centerY };
+                    positioned.push(pn);
+                    curX += GW_SIZE + SPACING;
+                    ni++;
+
+                } else if (node.type === 'parallel-join') {
+                    // Recalcular X: la join va después de todas las tareas del grupo paralelo
+                    // curX ya avanzó con cada tarea paralela, pero en un Parallel
+                    // las tareas comparten la misma X base — necesitamos recalcular
+                    // Buscamos el último task que fue paralelo (ya posicionado)
+                    const joinLane = defaultLane;
+                    const pn = { ...node, x: curX, y: joinLane.centerY - GW_SIZE/2, w: GW_SIZE, h: GW_SIZE, centerY: joinLane.centerY };
+                    positioned.push(pn);
+                    curX += GW_SIZE + SPACING;
+                    ni++;
+
+                } else if (node.type === 'xor-split') {
+                    const lane = defaultLane;
+                    const pn = { ...node, x: curX, y: lane.centerY - GW_SIZE/2, w: GW_SIZE, h: GW_SIZE, centerY: lane.centerY };
+                    positioned.push(pn);
+                    curX += GW_SIZE + SPACING;
+                    ni++;
+
+                } else if (node.type === 'xor-join') {
+                    const lane = defaultLane;
+                    const pn = { ...node, x: curX, y: lane.centerY - GW_SIZE/2, w: GW_SIZE, h: GW_SIZE, centerY: lane.centerY };
+                    positioned.push(pn);
+                    curX += GW_SIZE + SPACING;
+                    ni++;
+
+                } else if (node.type === 'end') {
+                    const lane = defaultLane;
+                    const pn = { ...node, x: curX, y: lane.centerY - EVENT_SIZE/2, w: EVENT_SIZE, h: EVENT_SIZE, centerY: lane.centerY };
+                    positioned.push(pn);
+                    curX += EVENT_SIZE + SPACING;
+                    ni++;
+
+                } else if (node.type === 'xor-branch-si-start' || node.type === 'xor-branch-si-end' ||
+                           node.type === 'xor-branch-no-start' || node.type === 'xor-branch-no-end') {
+                    // marcadores lógicos, no generan nodo XML
+                    ni++;
+
+                } else {
+                    ni++;
+                }
+            }
+
+            // Nodo de fin principal (solo si el último nodo posicionado no es ya un 'end')
+            const lastPositioned = positioned[positioned.length - 1];
+            if (lastPositioned.type !== 'end') {
+                const endLane = defaultLane;
+                const endNode = { id: generateUUID(), type: 'end', x: curX, y: endLane.centerY - EVENT_SIZE/2, w: EVENT_SIZE, h: EVENT_SIZE, centerY: endLane.centerY };
+                positioned.push(endNode);
+                curX += EVENT_SIZE + SPACING;
+            }
+
+            // ── Recalcular X de las ramas paralelas ─────────────────
+            // Las tareas de un grupo paralelo deben compartir la misma X base
+            // Buscamos grupos split→tasks→join y ajustamos
+            (function fixParallelX() {
+                for (let i = 0; i < positioned.length; i++) {
+                    if (positioned[i].type !== 'parallel-split') continue;
+                    const splitNode = positioned[i];
+                    const branchStartX = splitNode.x + splitNode.w + SPACING;
+                    // Encontrar todas las tareas hasta el join
+                    let j = i + 1;
+                    while (j < positioned.length && positioned[j].type !== 'parallel-join') {
+                        if (positioned[j].type === 'task') {
+                            positioned[j].x = branchStartX;
+                            const lane = getLane(positioned[j].activity);
+                            positioned[j].y = lane.centerY - TASK_H/2;
+                            positioned[j].centerY = lane.centerY;
+                        }
+                        j++;
+                    }
+                    // Ajustar la join X
+                    if (j < positioned.length && positioned[j].type === 'parallel-join') {
+                        positioned[j].x = branchStartX + TASK_W + SPACING;
+                        // Reajustar nodos subsiguientes
+                        const joinRightEdge = positioned[j].x + positioned[j].w + SPACING;
+                        let drift = joinRightEdge - (j + 1 < positioned.length ? positioned[j+1].x : joinRightEdge);
+                        for (let k = j + 1; k < positioned.length; k++) {
+                            positioned[k].x += drift;
+                        }
+                    }
+                }
+            })();
+
+            // ── Generar XML de actividades ───────────────────────────
+            const activitiesXmlParts = positioned.map(n => {
+                if (n.type === 'start')         return xmlStart(n);
+                if (n.type === 'end')           return xmlEnd(n);
+                if (n.type === 'task')          return xmlTask(n);
+                if (n.type === 'parallel-split' || n.type === 'parallel-join') return xmlGateway(n, 'Parallel');
+                if (n.type === 'xor-split'     || n.type === 'xor-join')       return xmlGateway(n, 'Exclusive');
+                return '';
+            }).filter(Boolean);
+
+            // ── Generar transiciones ─────────────────────────────────
+            // Reconstruimos el grafo de adyacencia a partir de los nodos semánticos
+            const transitionsXmlParts = [];
+
+            function addTrans(from, to, conditional = false) {
+                if (!from || !to) return;
+                transitionsXmlParts.push(makeTransition(from, to, conditional));
+            }
+
+            // Mapa id → nodo posicionado para búsqueda rápida
+            const posMap = {};
+            positioned.forEach(n => { if (n.id) posMap[n.id] = n; });
+
+            // Reconstruir la secuencia de conectividad a partir de los nodos semánticos (nodes[])
+            // junto con los positioned[] para tener coordenadas
+            // Estrategia: recorrer positioned[] en orden ignorando los nodos marcadores,
+            // con lógica especial para split/join
+
+            // Reconstruimos la conectividad recorriendo 'nodes' + el nodo start/end añadidos
+            // Primero reconstruimos una lista ordenada de nodos reales (sin marcadores)
+            const realNodes = positioned; // positioned ya no tiene marcadores
+
+            // Recorrido lineal básico para flujo sin gateways:
+            // Con gateways necesitamos el grafo. Lo construimos desde 'nodes' del parser.
+
+            // Construimos el grafo directamente desde la lista 'nodes' del parser
+            // que incluye los marcadores xor-branch-*
+            // Lógica:
+            //   - nodo normal → conecta con el siguiente normal
+            //   - parallel-split → conecta con cada task paralela; cada task → parallel-join
+            //   - xor-split → conecta (condicional) con primer task [SI] y primer task [NO]
+            //   - xor-join (si existe) recibe de la última task de cada rama
+            //   - end autogenerados en ramas sin continuación
+
+            // Para esto necesitamos los IDs que asignamos en positioned
+            // Rehacemos el mapeo: los nodos del parser tienen IDs asignados en buildFlowNodes
+            // y esos mismos IDs están en positioned. Hacemos la conexión por posición en 'nodes'
+
+            // Mapeo: nodo del parser (por id) → nodo posicionado
+            // (los marcadores no tienen id, se saltan)
+
+            // Reconstruimos grafo recorriendo 'nodes' original del parser
+            const parserNodes = [{ type: 'start', id: startNode.id }, ...nodes];
+            // añadir end al final si el último real no es end
+            if (lastPositioned.type !== 'end') {
+                const endFinal = positioned[positioned.length - 1];
+                parserNodes.push({ type: 'end', id: endFinal.id });
+            }
+
+            // Pasada de conexión
+            let pni = 0;
+            while (pni < parserNodes.length) {
+                const cur = parserNodes[pni];
+                if (!cur.id) { pni++; continue; } // marcador
+
+                const curPos = posMap[cur.id];
+
+                if (cur.type === 'parallel-split') {
+                    // conectar split con cada task paralela
+                    let k = pni + 1;
+                    const branchTasks = [];
+                    while (k < parserNodes.length && parserNodes[k].type === 'task') {
+                        branchTasks.push(parserNodes[k]); k++;
+                    }
+                    branchTasks.forEach(bt => addTrans(curPos, posMap[bt.id]));
+                    // cada branch task conecta con el join
+                    const joinNode = parserNodes[k]; // parallel-join
+                    if (joinNode && joinNode.type === 'parallel-join') {
+                        branchTasks.forEach(bt => addTrans(posMap[bt.id], posMap[joinNode.id]));
+                    }
+                    pni = k + 1; // saltar hasta después del join
+                    continue;
+                }
+
+                if (cur.type === 'xor-split') {
+                    // buscar xor-branch-si-start y xor-branch-no-start
+                    let k = pni + 1;
+                    // rama SI
+                    while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-si-start') k++;
+                    k++; // entrar en rama SI
+                    const siTasks = [];
+                    while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-si-end') {
+                        if (parserNodes[k].id) siTasks.push(parserNodes[k]);
+                        k++;
+                    }
+                    k++; // saltar xor-branch-si-end
+                    // rama NO
+                    while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-no-start') k++;
+                    k++; // entrar en rama NO
+                    const noTasks = [];
+                    while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-no-end') {
+                        if (parserNodes[k].id) noTasks.push(parserNodes[k]);
+                        k++;
+                    }
+                    k++; // saltar xor-branch-no-end
+
+                    // conectar split → primera tarea de cada rama (condicional)
+                    if (siTasks[0]) addTrans(curPos, posMap[siTasks[0].id], true);
+                    if (noTasks[0]) addTrans(curPos, posMap[noTasks[0].id], true);
+
+                    // conectar internamente cada rama
+                    for (let t = 0; t < siTasks.length - 1; t++) addTrans(posMap[siTasks[t].id], posMap[siTasks[t+1].id]);
+                    for (let t = 0; t < noTasks.length - 1; t++) addTrans(posMap[noTasks[t].id], posMap[noTasks[t+1].id]);
+
+                    // ¿hay xor-join?
+                    const afterBranches = parserNodes[k];
+                    if (afterBranches && afterBranches.type === 'xor-join') {
+                        const joinPos = posMap[afterBranches.id];
+                        const lastSI = siTasks[siTasks.length - 1];
+                        const lastNO = noTasks[noTasks.length - 1];
+                        if (lastSI) addTrans(posMap[lastSI.id], joinPos);
+                        if (lastNO) addTrans(posMap[lastNO.id], joinPos);
+                        pni = k + 1;
+                    } else {
+                        // sin join: cada rama termina con su propio end (ya en positioned)
+                        pni = k;
+                    }
+                    continue;
+                }
+
+                // Nodo normal: conectar con el siguiente real
+                if (cur.type !== 'xor-branch-si-start' && cur.type !== 'xor-branch-si-end' &&
+                    cur.type !== 'xor-branch-no-start' && cur.type !== 'xor-branch-no-end') {
+                    let next = pni + 1;
+                    while (next < parserNodes.length && !parserNodes[next].id) next++;
+                    if (next < parserNodes.length) {
+                        const nextNode = parserNodes[next];
+                        if (nextNode.type !== 'xor-branch-si-start' && nextNode.type !== 'xor-branch-no-start') {
+                            addTrans(curPos, posMap[nextNode.id]);
+                        }
+                    }
+                }
+                pni++;
+            }
+
+            const totalHeight = roles.length * LANE_H;
 
             return `<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Id="${packageId}" Name="${cleanXmlString(procId)}" xmlns="http://www.wfmc.org/2009/XPDL2.2">
@@ -416,9 +816,9 @@ ${coordsXml}\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphic
     <Description>${cleanXmlString(procName)}</Description>
   </PackageHeader>
   <RedefinableHeader>
-    <Author>madeomade Modelador</Author>
+    <Author>Madelaine.Castro</Author>
     <Version>1.0</Version>
-    <Countrykey>ES</Countrykey>
+    <Countrykey>CO</Countrykey>
   </RedefinableHeader>
   <Participants>
 ${participantsXml}
@@ -429,7 +829,7 @@ ${participantsXml}
 ${lanesXml}
       </Lanes>
       <NodeGraphicsInfos>
-        <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${roles.length * LANE_H}" Width="${currentX + 150}" BorderColor="-16777216" FillColor="-1">
+        <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${totalHeight}" Width="${curX + 100}" BorderColor="-16777216" FillColor="-1">
           <Coordinates XCoordinate="30" YCoordinate="30" />
         </NodeGraphicsInfo>
       </NodeGraphicsInfos>
@@ -438,10 +838,10 @@ ${lanesXml}
   <WorkflowProcesses>
     <WorkflowProcess Id="${processUuid}" Name="${cleanXmlString(procName)}">
       <Activities>
-${activitiesXml}
+${activitiesXmlParts.join('\n')}
       </Activities>
       <Transitions>
-${transitionsXml.join('\n')}
+${transitionsXmlParts.join('\n')}
       </Transitions>
     </WorkflowProcess>
   </WorkflowProcesses>
@@ -504,20 +904,23 @@ ${elementsXml}${flowsXml}  </process>
             }
 
             try {
-                const { activities, roles } = parseText(desc);
+                const { activities, nodes, roles } = parseText(desc);
 
                 if (activities.length === 0) {
                     showMsg('❌ No se detectaron actividades válidas. Revisa el formato numérico.', 'error');
                     return;
                 }
 
-                processData.xpdl = generateXPDL(id, name, activities, roles);
+                const gwCount = nodes.filter(n => n.type === 'parallel-split' || n.type === 'xor-split').length;
+
+                processData.xpdl = generateXPDL(id, name, nodes, roles);
                 processData.bpmn = generateBPMN(name, activities, roles);
 
                 document.getElementById('xpdlOutput').textContent = processData.xpdl;
                 document.getElementById('bpmnOutput').textContent = processData.bpmn;
 
-                showMsg(`✅ ¡Éxito! Generadas ${activities.length} actividades procesadas con Matriz RACI en ${roles.length} carriles.`, 'success');
+                const gwMsg = gwCount > 0 ? ` · ${gwCount} gateway(s) detectado(s)` : '';
+                showMsg(`✅ ¡Éxito! ${activities.length} actividades · ${roles.length} carriles${gwMsg}`, 'success');
 
             } catch (err) {
                 showMsg('💥 Error crítico procesando el modelo: ' + err.message, 'error');
