@@ -739,7 +739,7 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                     if (joinNode && joinNode.type === 'parallel-join') {
                         branchTasks.forEach(bt => addTrans(posMap[bt.id], posMap[joinNode.id]));
                     }
-                    pni = k + 1; // saltar hasta después del join
+                    pni = k; // NO saltar el join: se procesa en la siguiente iteración para generar join→siguiente
                     continue;
                 }
 
@@ -781,7 +781,7 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                         const lastNO = noTasks[noTasks.length - 1];
                         if (lastSI) addTrans(posMap[lastSI.id], joinPos);
                         if (lastNO) addTrans(posMap[lastNO.id], joinPos);
-                        pni = k + 1;
+                        pni = k; // NO saltar el join: se procesa en la siguiente iteración para generar join→siguiente
                     } else {
                         // sin join: cada rama termina con su propio end (ya en positioned)
                         pni = k;
