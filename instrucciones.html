@@ -68,24 +68,25 @@
         <h2>📋 Ejemplo de Visualización del Formato</h2>
         <p style="font-size: 15px;">Así es como luce un proceso perfectamente estructurado y listo para ser copiado en tu herramienta web:</p>
 
-        <div class="code-block" id="templateContent">1. Registro de la incidencia
-Responsable: Usuario afectado
-Acción: Notificar el fallo técnico a través del portal de soporte interno. 
-El registro debe detallar los siguientes parámetros críticos para el equipo:
-- Aplicación o sistema donde ocurre el error
-- Captura de pantalla o código del mensaje de fallo
-- Grado de impacto (Bloqueante, Alto, Medio, Bajo)
-
-2. Clasificación y asignación
-Responsable: Técnico de Soporte Nivel 1
-Acción: Revisar la bandeja de entrada del sistema de tickets. Verificar que los datos estén completos, evaluar la prioridad real de la incidencia y asignar el caso al departamento técnico correspondiente en menos de 15 minutos.
-
-3. Diagnóstico y resolución
-Responsables: Ingeniero de Sistemas y Administrador de Base de Datos
-Acción: Investigar la causa raíz del problema en los entornos de producción. 
-Una vez localizado el origen del fallo, se procederá con el plan de contingencia:
-- Ejecutar scripts de reparación en la base de datos si aplica
-- Reiniciar los servicios afectados en el servidor en la ventana de mantenimiento</div>
+        <div class="code-block" id="templateContent">1. Solicitud inicial
+Responsable: Empleado que necesita realizar el viaje.
+Ejecutante: Empleado solicitante.
+Consultado: Supervisor directo.
+Informado: Departamento de Recursos Humanos.
+Acción: Completar la solicitud de viaje corporativo utilizando exclusivamente el formulario o sistema habilitado por la organización, consignando de forma íntegra, exacta y verificable todos los datos requeridos: identificación del solicitante, área o departamento, destino, fechas y horas previstas de salida y regreso, motivo profesional del desplazamiento, agenda o actividades previstas, necesidad de transporte, alojamiento u otros servicios asociados, así como una estimación razonada del coste total. Antes de registrar la solicitud, el empleado debe revisar que la información no contenga omisiones, incoherencias ni errores, adjuntar la documentación de soporte que resulte necesaria y confirmar que el viaje responde a una necesidad real de negocio y se ajusta a las políticas internas aplicables. Una vez validada la información, deberá registrar la solicitud por el canal establecido dentro del plazo previsto para permitir su evaluación, aprobación y gestión posterior sin incidencias.
+•	Nombre del solicitante
+•	Departamento
+•	Destino del viaje
+•	Fechas de salida y regreso
+•	Motivo del viaje
+•	Presupuesto estimado
+2. Aprobación del supervisor
+Responsable: Supervisor directo del empleado.
+Ejecutante: Supervisor directo.
+Consultado: Empleado solicitante.
+Informado: Departamento de Recursos Humanos.
+Acción: Analizar la solicitud recibida verificando, en primer lugar, que toda la información necesaria esté completa, sea coherente y esté suficientemente justificada. El supervisor debe confirmar que el desplazamiento responde a una necesidad real del servicio, proyecto o actividad corporativa, que las fechas propuestas son compatibles con las prioridades del área, que la ausencia del empleado no compromete la operativa ordinaria y que el presupuesto estimado resulta razonable en relación con el motivo del viaje. Si detecta carencias, inconsistencias o falta de documentación, deberá requerir al empleado las aclaraciones o correcciones necesarias antes de continuar. Una vez comprobados todos los extremos, el supervisor aprobará o rechazará la solicitud por el canal establecido, dejando constancia expresa de la decisión adoptada para asegurar la trazabilidad del proceso y permitir su posterior gestión por las áreas implicadas.
+</div>
 
         <h2>🛠️ Recomendaciones para evitar fallos</h2>
         <ul>
@@ -97,57 +98,31 @@ Una vez localizado el origen del fallo, se procederá con el plan de contingenci
 
     <script>
         function downloadTemplate() {
-            const templateText = `================================================================================
-PLANTILLA DE ESTRUCTURA ESTÁNDAR PARA GENERADOR DE PROCESOS BIZAGI
-================================================================================
-Guarda este archivo en texto plano (.txt) para usarlo de guía de documentación.
-
---------------------------------------------------------------------------------
-REGLAS DE ORO PARA EVITAR COMPLICACIONES EN EL FORMULARIO HTML:
---------------------------------------------------------------------------------
-1. CADA TAREA DEBE EMPEZAR CON SU NÚMERO: Usa "X. Nombre de la tarea" (Ej: 1. Inicio)
-2. EL RESPONSABLE DEBE IR PRIMERO: Pon la línea "Responsable:" justo debajo del nombre.
-3. SI HAY VARIOS RESPONSABLES: Sepáralos con una coma (,) o con la palabra "y".
-4. LA ACCIÓN CIERRA LA TAREA: La palabra "Acción:" marca el inicio de la descripción.
-5. TEXTO MULTILÍNEA Y VIÑETAS: Todo lo que escribas debajo de "Acción:" se guardará 
-   dentro de esa misma tarea hasta que el programa detecte el número de la siguiente.
-   Para las listas, te sugerimos usar guiones simples (-) para máxima compatibilidad.
-
-================================================================================
-EJEMPLO PRÁCTICO: PROCESO DE GESTIÓN DE INCIDENCIAS
-================================================================================
-
-1. Registro de la incidencia
-Responsable: Usuario afectado
-Acción: Notificar el fallo técnico a través del portal de soporte interno. 
-El registro debe detallar los siguientes parámetros críticos para el equipo técnico:
-- Aplicación o sistema donde ocurre el error
-- Captura de pantalla o código del mensaje de fallo
-- Grado de impacto en su trabajo diario (Bloqueante, Alto, Medio, Bajo)
-
-2. Clasificación y asignación
-Responsable: Técnico de Soporte Nivel 1
-Acción: Revisar la bandeja de entrada del sistema de tickets. Verificar que los datos estén completos, evaluar la prioridad real de la incidencia y asignar el caso al departamento técnico correspondiente en menos de 15 minutos.
-
-3. Diagnóstico y resolución
-Responsables: Ingeniero de Sistemas y Administrador de Base de Datos
-Acción: Investigar la causa raíz del problema en los entornos de producción. 
-Una vez localizado el origen del fallo, se procederá con el plan de contingencia:
-- Ejecutar scripts de reparación en la base de datos si aplica
-- Reiniciar los servicios afectados en el servidor en la ventana de mantenimiento
-- Documentar los cambios realizados en la bitácora técnica de cambios
-
-4. Validación del usuario
-Responsable: Usuario afectado
-Acción: Probar el funcionamiento del sistema una vez recibida la notificación de reparación. En caso de conformidad, cerrar el ticket desde el portal; si el problema persiste, reabrirlo explicando detalladamente qué sigue fallando.
-
-5. Cierre formal e informe
-Responsable: Coordinador de Soporte Técnico
-Acción: Archivar de manera definitiva el ticket de soporte en el sistema informático. Actualizar la base de conocimientos (*Knowledge Base*) de la empresa con la solución aplicada para agilizar la resolución de incidentes similares en el futuro.
-
-================================================================================
-FIN DE LA PLANTILLA
-================================================================================`;
+            const templateText = `1. Solicitud inicial
+Responsable: Empleado que necesita realizar el viaje.
+Ejecutante: Empleado solicitante.
+Consultado: Supervisor directo.
+Informado: Departamento de Recursos Humanos.
+Acción: Completar la solicitud de viaje corporativo utilizando exclusivamente el formulario o sistema habilitado por la organización, consignando de forma íntegra, exacta y verificable todos los datos requeridos: identificación del solicitante, área o departamento, destino, fechas y horas previstas de salida y regreso, motivo profesional del desplazamiento, agenda o actividades previstas, necesidad de transporte, alojamiento u otros servicios asociados, así como una estimación razonada del coste total. Antes de registrar la solicitud, el empleado debe revisar que la información no contenga omisiones, incoherencias ni errores, adjuntar la documentación de soporte que resulte necesaria y confirmar que el viaje responde a una necesidad real de negocio y se ajusta a las políticas internas aplicables. Una vez validada la información, deberá registrar la solicitud por el canal establecido dentro del plazo previsto para permitir su evaluación, aprobación y gestión posterior sin incidencias.
+•	Nombre del solicitante
+•	Departamento
+•	Destino del viaje
+•	Fechas de salida y regreso
+•	Motivo del viaje
+•	Presupuesto estimado
+2. Aprobación del supervisor
+Responsable: Supervisor directo del empleado.
+Ejecutante: Supervisor directo.
+Consultado: Empleado solicitante.
+Informado: Departamento de Recursos Humanos.
+Acción: Analizar la solicitud recibida verificando, en primer lugar, que toda la información necesaria esté completa, sea coherente y esté suficientemente justificada. El supervisor debe confirmar que el desplazamiento responde a una necesidad real del servicio, proyecto o actividad corporativa, que las fechas propuestas son compatibles con las prioridades del área, que la ausencia del empleado no compromete la operativa ordinaria y que el presupuesto estimado resulta razonable en relación con el motivo del viaje. Si detecta carencias, inconsistencias o falta de documentación, deberá requerir al empleado las aclaraciones o correcciones necesarias antes de continuar. Una vez comprobados todos los extremos, el supervisor aprobará o rechazará la solicitud por el canal establecido, dejando constancia expresa de la decisión adoptada para asegurar la trazabilidad del proceso y permitir su posterior gestión por las áreas implicadas.
+3. Envío a Recursos Humanos
+Responsable: Empleado.
+Ejecutante: Empleado solicitante.
+Consultado: Supervisor directo.
+Informado: Departamento de Recursos Humanos.
+Acción: Remitir a Recursos Humanos la solicitud que ya haya sido aprobada por el supervisor, utilizando exclusivamente el canal corporativo definido para este tipo de gestiones y asegurando que viaja acompañada de toda la información y documentación necesaria para su correcta tramitación. Antes del envío, el empleado debe comprobar que la aprobación ha quedado formalmente registrada, que no existen versiones desactualizadas del formulario y que los datos incluidos coinciden con los aprobados. El envío debe realizarse dentro del plazo establecido para evitar retrasos en la contratación de servicios o incrementos de coste. Además, deberá quedar evidencia del momento de remisión, del contenido enviado y del destinatario responsable, de forma que pueda garantizarse la trazabilidad completa del expediente desde su aprobación hasta su recepción por Recursos Humanos.
+`;
 
             const blob = new Blob([templateText], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
