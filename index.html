@@ -475,7 +475,7 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
         }
 
         function xmlTask(node) {
-            const n = cleanXmlString(node.name);
+            const n = cleanXmlString(node.activity.name);
             const act = node.activity;
             const htmlAction = cleanXmlString(act.action).replace(/\n/g, '&lt;br/&gt;');
             const role = act.responsables[0] || '';
