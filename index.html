@@ -456,7 +456,7 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
         // ─────────────────────────────────────────────────────────────
         // Helpers de geometría y XML de nodos
         // ─────────────────────────────────────────────────────────────
-        function makeTransition(fromNode, toNode, isConditional = false) {
+        function makeTransition(fromNode, toNode, condType = 'NONE', label = '') {
             const fromX = fromNode.x + fromNode.w;
             const fromY = fromNode.centerY;
             const toX   = toNode.x;
@@ -468,10 +468,12 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                 const midX = fromX + (toX - fromX) / 2;
                 coordsXml = `              <Coordinates XCoordinate="${fromX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${fromY}" />\n              <Coordinates XCoordinate="${midX}" YCoordinate="${toY}" />\n              <Coordinates XCoordinate="${toX}" YCoordinate="${toY}" />`;
             }
-            const condXml = isConditional
-                ? `\n          <Condition Type="CONDITION"><Expression /></Condition>`
-                : `\n          <Condition />`;
-            return `        <Transition Id="${generateUUID()}" From="${fromNode.id}" To="${toNode.id}">${condXml}\n          <ConnectorGraphicsInfos>\n            <ConnectorGraphicsInfo ToolId="BizAgi_Process_Modeler" BorderColor="-16777216">\n${coordsXml}\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphicsInfos>\n        </Transition>`;
+            let condXml;
+            if (condType === 'CONDITION')       condXml = `\n          <Condition Type="CONDITION"><Expression /></Condition>`;
+            else if (condType === 'OTHERWISE')  condXml = `\n          <Condition Type="OTHERWISE" />`;
+            else                                condXml = `\n          <Condition />`;
+            const nameAttr = label ? ` Name="${cleanXmlString(label)}"` : '';
+            return `        <Transition Id="${generateUUID()}" From="${fromNode.id}" To="${toNode.id}"${nameAttr}>${condXml}\n          <ConnectorGraphicsInfos>\n            <ConnectorGraphicsInfo ToolId="BizAgi_Process_Modeler" BorderColor="-16777216">\n${coordsXml}\n            </ConnectorGraphicsInfo>\n          </ConnectorGraphicsInfos>\n        </Transition>`;
         }
 
         function xmlTask(node) {
@@ -494,9 +496,10 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
             return `        <Activity Id="${node.id}" Name="Fin">\n          <Event><EndEvent Result="None" /></Event>\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-6750208" FillColor="-1135958">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n        </Activity>`;
         }
 
-        function xmlGateway(node, gwType) {
+        function xmlGateway(node, gwType, label = '') {
             // gwType: 'Parallel' | 'Exclusive'  (XOR = Exclusive en XPDL)
-            return `        <Activity Id="${node.id}" Name="">\n          <Route GatewayType="${gwType}" />\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-5855715" FillColor="-52">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n          <ExtendedAttributes />\n        </Activity>`;
+            const nameAttr = label ? cleanXmlString(label) : '';
+            return `        <Activity Id="${node.id}" Name="${nameAttr}">\n          <Route GatewayType="${gwType}" />\n          <NodeGraphicsInfos>\n            <NodeGraphicsInfo ToolId="BizAgi_Process_Modeler" Height="${node.h}" Width="${node.w}" BorderColor="-5855715" FillColor="-52">\n              <Coordinates XCoordinate="${node.x}" YCoordinate="${node.y}" />\n            </NodeGraphicsInfo>\n          </NodeGraphicsInfos>\n          <ExtendedAttributes />\n        </Activity>`;
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -665,7 +668,8 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                 if (n.type === 'end')           return xmlEnd(n);
                 if (n.type === 'task')          return xmlTask(n);
                 if (n.type === 'parallel-split' || n.type === 'parallel-join') return xmlGateway(n, 'Parallel');
-                if (n.type === 'xor-split'     || n.type === 'xor-join')       return xmlGateway(n, 'Exclusive');
+                if (n.type === 'xor-split')     return xmlGateway(n, 'Exclusive', n.label || '');
+                if (n.type === 'xor-join')      return xmlGateway(n, 'Exclusive');
                 return '';
             }).filter(Boolean);
 
@@ -673,9 +677,9 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
             // Reconstruimos el grafo de adyacencia a partir de los nodos semánticos
             const transitionsXmlParts = [];
 
-            function addTrans(from, to, conditional = false) {
+            function addTrans(from, to, condType = 'NONE', label = '') {
                 if (!from || !to) return;
-                transitionsXmlParts.push(makeTransition(from, to, conditional));
+                transitionsXmlParts.push(makeTransition(from, to, condType, label));
             }
 
             // Mapa id → nodo posicionado para búsqueda rápida
@@ -766,8 +770,8 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                     k++; // saltar xor-branch-no-end
 
                     // conectar split → primera tarea de cada rama (condicional)
-                    if (siTasks[0]) addTrans(curPos, posMap[siTasks[0].id], true);
-                    if (noTasks[0]) addTrans(curPos, posMap[noTasks[0].id], true);
+                    if (siTasks[0]) addTrans(curPos, posMap[siTasks[0].id], 'OTHERWISE', 'SI');
+                    if (noTasks[0]) addTrans(curPos, posMap[noTasks[0].id], 'CONDITION', 'NO');
 
                     // conectar internamente cada rama
                     for (let t = 0; t < siTasks.length - 1; t++) addTrans(posMap[siTasks[t].id], posMap[siTasks[t+1].id]);
