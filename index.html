@@ -852,48 +852,245 @@ ${transitionsXmlParts.join('\n')}
 </Package>`;
         }
 
-        function generateBPMN(procName, activities, roles) {
-            const processUuid = 'Process_' + generateUUID().replace(/-/g, '_');
-            const flowElements = [];
-            
-            flowElements.push({ id: 'StartEvent_01', name: 'Inicio', type: 'start' });
-            activities.forEach((act, idx) => {
-                flowElements.push({
-                    id: `Activity_${idx}_${generateUUID().replace(/-/g, '_').substring(0,4)}`,
-                    name: act.name,
-                    type: 'task',
-                    action: act.action
-                });
+        function generateBPMN(procId, procName, nodes, roles) {
+            const processUuid = 'Id_' + generateUUID();
+            const collabId    = 'Id_' + generateUUID();
+            const poolPartId  = 'Id_' + generateUUID();
+            const laneSetId   = 'Id_' + generateUUID();
+            const diagramId   = 'Id_' + generateUUID();
+            const planeId     = 'Id_' + generateUUID();
+
+            const LANE_H = 130, TASK_W = 110, TASK_H = 65;
+            const EVENT_SIZE = 30, GW_SIZE = 40, SPACING = 80;
+
+            // ── Lanes ────────────────────────────────────────────────
+            const laneMap = {};
+            let yCoord = 0;
+            const laneIds = roles.map(r => {
+                const id = 'Id_' + generateUUID();
+                laneMap[r] = { id, y: yCoord, centerY: yCoord + LANE_H / 2 };
+                yCoord += LANE_H;
+                return { id, name: r };
             });
-            flowElements.push({ id: 'EndEvent_01', name: 'Fin', type: 'end' });
+            const defaultLane = laneMap[roles[0]];
 
-            let elementsXml = '';
-            let flowsXml = '';
+            function getLane(act) {
+                if (!act) return defaultLane;
+                return laneMap[act.responsables[0] || roles[0]] || defaultLane;
+            }
 
-            flowElements.forEach((node, i) => {
-                const nameEsc = cleanXmlString(node.name);
-                let incoming = i > 0 ? `      <incoming>Flow_${i-1}</incoming>\n` : '';
-                let outgoing = i < flowElements.length - 1 ? `      <outgoing>Flow_${i}</outgoing>
-` : '';
+            // ── Position nodes (same logic as XPDL) ─────────────────
+            const positioned = [];
+            let curX = 120;
 
-                if (node.type === 'start') {
-                    elementsXml += `    <startEvent id="${node.id}" name="${nameEsc}">\n${outgoing}    </startEvent>\n`;
+            const startId = 'Id_' + generateUUID();
+            const firstTask = nodes.find(n => n.type === 'task');
+            const firstLane = firstTask ? getLane(firstTask.activity) : defaultLane;
+            positioned.push({ id: startId, type: 'start', x: curX, y: firstLane.centerY - EVENT_SIZE/2, w: EVENT_SIZE, h: EVENT_SIZE, centerY: firstLane.centerY });
+            curX += EVENT_SIZE + SPACING;
+
+            let ni = 0;
+            while (ni < nodes.length) {
+                const node = nodes[ni];
+                if (node.type === 'task') {
+                    const lane = getLane(node.activity);
+                    positioned.push({ ...node, x: curX, y: lane.centerY - TASK_H/2, w: TASK_W, h: TASK_H, centerY: lane.centerY });
+                    curX += TASK_W + SPACING; ni++;
+                } else if (node.type === 'parallel-split' || node.type === 'parallel-join' || node.type === 'xor-split' || node.type === 'xor-join') {
+                    const lane = defaultLane;
+                    positioned.push({ ...node, x: curX, y: lane.centerY - GW_SIZE/2, w: GW_SIZE, h: GW_SIZE, centerY: lane.centerY });
+                    curX += GW_SIZE + SPACING; ni++;
                 } else if (node.type === 'end') {
-                    elementsXml += `    <endEvent id="${node.id}" name="${nameEsc}">\n${incoming}    </endEvent>\n`;
-                } else {
-                    const docEsc = cleanXmlString(node.action).replace(/\n/g, ' ');
-                    elementsXml += `    <task id="${node.id}" name="${nameEsc}">\n      <documentation>${docEsc}</documentation>\n${incoming}${outgoing}    </task>\n`;
+                    const lane = defaultLane;
+                    positioned.push({ ...node, x: curX, y: lane.centerY - EVENT_SIZE/2, w: EVENT_SIZE, h: EVENT_SIZE, centerY: lane.centerY });
+                    curX += EVENT_SIZE + SPACING; ni++;
+                } else { ni++; } // skip markers
+            }
+            const lastPos = positioned[positioned.length - 1];
+            if (lastPos.type !== 'end') {
+                const endId = 'Id_' + generateUUID();
+                positioned.push({ id: endId, type: 'end', x: curX, y: defaultLane.centerY - EVENT_SIZE/2, w: EVENT_SIZE, h: EVENT_SIZE, centerY: defaultLane.centerY });
+                curX += EVENT_SIZE + SPACING;
+            }
+
+            // Fix parallel X (same as XPDL)
+            for (let i = 0; i < positioned.length; i++) {
+                if (positioned[i].type !== 'parallel-split') continue;
+                const bx = positioned[i].x + positioned[i].w + SPACING;
+                let j = i + 1;
+                while (j < positioned.length && positioned[j].type !== 'parallel-join') {
+                    if (positioned[j].type === 'task') {
+                        const lane = getLane(positioned[j].activity);
+                        positioned[j].x = bx; positioned[j].y = lane.centerY - TASK_H/2; positioned[j].centerY = lane.centerY;
+                    } j++;
+                }
+                if (j < positioned.length) {
+                    positioned[j].x = bx + TASK_W + SPACING;
+                    const drift = positioned[j].x + positioned[j].w + SPACING - (j + 1 < positioned.length ? positioned[j+1].x : 0);
+                    for (let k = j + 1; k < positioned.length; k++) positioned[k].x += drift;
+                }
+            }
+
+            // ── Build edges (same graph traversal as XPDL) ──────────
+            const edges = []; // { id, from, to, condType, label }
+            const posMap = {}; positioned.forEach(n => { if (n.id) posMap[n.id] = n; });
+            const parserNodes = [{ type: 'start', id: positioned[0].id }, ...nodes];
+            if (positioned[positioned.length-1].type === 'end' && (nodes.length === 0 || nodes[nodes.length-1].type !== 'end')) {
+                parserNodes.push({ type: 'end', id: positioned[positioned.length-1].id });
+            }
+
+            function addEdge(fromId, toId, condType, label) {
+                if (!fromId || !toId) return;
+                edges.push({ id: 'Id_' + generateUUID(), from: fromId, to: toId, condType: condType || 'NONE', label: label || '' });
+            }
+
+            let pni = 0;
+            while (pni < parserNodes.length) {
+                const cur = parserNodes[pni];
+                if (!cur.id) { pni++; continue; }
+
+                if (cur.type === 'parallel-split') {
+                    let k = pni + 1; const bt = [];
+                    while (k < parserNodes.length && parserNodes[k].type === 'task') { bt.push(parserNodes[k]); k++; }
+                    bt.forEach(b => addEdge(cur.id, b.id));
+                    if (parserNodes[k]?.type === 'parallel-join') bt.forEach(b => addEdge(b.id, parserNodes[k].id));
+                    pni = k; continue;
                 }
 
-                if (i < flowElements.length - 1) {
-                    flowsXml += `    <sequenceFlow id="Flow_${i}" sourceRef="${node.id}" targetRef="${flowElements[i+1].id}" />\n`;
+                if (cur.type === 'xor-split') {
+                    let k = pni + 1;
+                    while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-si-start') k++; k++;
+                    const si = []; while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-si-end') { if (parserNodes[k].id) si.push(parserNodes[k]); k++; } k++;
+                    while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-no-start') k++; k++;
+                    const no = []; while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-no-end') { if (parserNodes[k].id) no.push(parserNodes[k]); k++; } k++;
+                    if (si[0]) addEdge(cur.id, si[0].id, 'CONDITION', 'SI');
+                    if (no[0]) addEdge(cur.id, no[0].id, 'CONDITION', 'NO');
+                    for (let t = 0; t < si.length - 1; t++) addEdge(si[t].id, si[t+1].id);
+                    for (let t = 0; t < no.length - 1; t++) addEdge(no[t].id, no[t+1].id);
+                    if (parserNodes[k]?.type === 'xor-join') {
+                        if (si.length) addEdge(si[si.length-1].id, parserNodes[k].id);
+                        if (no.length) addEdge(no[no.length-1].id, parserNodes[k].id);
+                    }
+                    pni = k; continue;
                 }
+
+                if (cur.type !== 'xor-branch-si-start' && cur.type !== 'xor-branch-si-end' &&
+                    cur.type !== 'xor-branch-no-start' && cur.type !== 'xor-branch-no-end') {
+                    let next = pni + 1;
+                    while (next < parserNodes.length && !parserNodes[next].id) next++;
+                    if (next < parserNodes.length && parserNodes[next].type !== 'xor-branch-si-start' && parserNodes[next].type !== 'xor-branch-no-start') {
+                        addEdge(cur.id, parserNodes[next].id);
+                    }
+                }
+                pni++;
+            }
+
+            // ── Build incoming/outgoing maps ─────────────────────────
+            const inMap = {}, outMap = {};
+            positioned.forEach(n => { inMap[n.id] = []; outMap[n.id] = []; });
+            edges.forEach(e => { if (outMap[e.from]) outMap[e.from].push(e.id); if (inMap[e.to]) inMap[e.to].push(e.id); });
+
+            // ── Determine gateway directions ─────────────────────────
+            function gwDir(nodeId) {
+                return (outMap[nodeId]?.length || 0) > 1 ? 'Diverging' : 'Converging';
+            }
+
+            // ── Process elements XML ─────────────────────────────────
+            let elemXml = '';
+            positioned.forEach(n => {
+                const inc = (inMap[n.id] || []).map(f => `      <incoming>${f}</incoming>`).join('\n');
+                const out = (outMap[n.id] || []).map(f => `      <outgoing>${f}</outgoing>`).join('\n');
+                const io = [inc, out].filter(Boolean).join('\n') + '\n';
+
+                if (n.type === 'start') {
+                    elemXml += `    <startEvent id="${n.id}" name="Inicio">\n      <documentation />\n${io}    </startEvent>\n`;
+                } else if (n.type === 'end') {
+                    elemXml += `    <endEvent id="${n.id}" name="Fin">\n      <documentation />\n${io}    </endEvent>\n`;
+                } else if (n.type === 'task') {
+                    const nm = cleanXmlString(n.activity.name);
+                    const doc = '&lt;p&gt;' + cleanXmlString(n.activity.action).replace(/\n/g, '&lt;br/&gt;') + '&lt;/p&gt;';
+                    elemXml += `    <task id="${n.id}" name="${nm}">\n      <documentation>${doc}</documentation>\n${io}    </task>\n`;
+                } else if (n.type === 'parallel-split' || n.type === 'parallel-join') {
+                    elemXml += `    <parallelGateway id="${n.id}" name="" gatewayDirection="${gwDir(n.id)}">\n      <documentation />\n${io}    </parallelGateway>\n`;
+                } else if (n.type === 'xor-split' || n.type === 'xor-join') {
+                    const nm = (n.type === 'xor-split' && n.label) ? cleanXmlString(n.label) : '';
+                    elemXml += `    <exclusiveGateway id="${n.id}" name="${nm}" gatewayDirection="${gwDir(n.id)}">\n      <documentation />\n${io}    </exclusiveGateway>\n`;
+                }
+            });
+
+            // ── Sequence flows XML ───────────────────────────────────
+            let flowsXml = '';
+            edges.forEach(e => {
+                const cond = e.condType === 'CONDITION' ? `\n      <conditionExpression id="Expr_${generateUUID()}" />` : '';
+                const nameAttr = e.label ? ` name="${cleanXmlString(e.label)}"` : '';
+                flowsXml += `    <sequenceFlow id="${e.id}"${nameAttr} sourceRef="${e.from}" targetRef="${e.to}">${cond}\n    </sequenceFlow>\n`;
+            });
+
+            // ── Lanes XML ────────────────────────────────────────────
+            const lanesXml = laneIds.map(l =>
+                `      <lane id="${l.id}" name="${cleanXmlString(l.name)}">\n        <childLaneSet id="Id_${generateUUID()}" />\n      </lane>`
+            ).join('\n');
+
+            // ── Resources XML ────────────────────────────────────────
+            const resourcesXml = roles.map(r => {
+                const rid = r.replace(/\s+/g, '');
+                return `  <resource id="${rid}" name="${cleanXmlString(r)}">\n    <documentation>${cleanXmlString(r)}</documentation>\n  </resource>`;
+            }).join('\n');
+
+            // ── BPMNDiagram: shapes + edges ──────────────────────────
+            const totalH = roles.length * LANE_H;
+            let shapesXml = '';
+
+            // Pool shape
+            shapesXml += `      <BPMNShape id="DS_${generateUUID()}" bpmnElement="${poolPartId}" isHorizontal="true">\n        <Bounds x="30" y="30" width="${curX + 100}" height="${totalH}" xmlns="http://www.omg.org/spec/DD/20100524/DC" />\n      </BPMNShape>\n`;
+
+            // Lane shapes
+            laneIds.forEach(l => {
+                const lm = laneMap[l.name];
+                shapesXml += `      <BPMNShape id="DS_${generateUUID()}" bpmnElement="${l.id}" isHorizontal="true">\n        <Bounds x="50" y="${lm.y + 30}" width="${curX + 70}" height="${LANE_H}" xmlns="http://www.omg.org/spec/DD/20100524/DC" />\n      </BPMNShape>\n`;
+            });
+
+            // Node shapes
+            positioned.forEach(n => {
+                shapesXml += `      <BPMNShape id="DS_${generateUUID()}" bpmnElement="${n.id}">\n        <Bounds x="${n.x}" y="${n.y + 30}" width="${n.w}" height="${n.h}" xmlns="http://www.omg.org/spec/DD/20100524/DC" />\n      </BPMNShape>\n`;
+            });
+
+            // Edge shapes
+            let edgesXml = '';
+            edges.forEach(e => {
+                const from = posMap[e.from], to = posMap[e.to];
+                if (!from || !to) return;
+                const fx = from.x + from.w, fy = from.centerY + 30;
+                const tx = to.x, ty = to.centerY + 30;
+                let wps;
+                if (Math.abs(fy - ty) < 5) {
+                    wps = `        <waypoint x="${fx}" y="${fy}" xmlns="http://www.omg.org/spec/DD/20100524/DI" />\n        <waypoint x="${tx}" y="${ty}" xmlns="http://www.omg.org/spec/DD/20100524/DI" />`;
+                } else {
+                    const mx = fx + (tx - fx) / 2;
+                    wps = `        <waypoint x="${fx}" y="${fy}" xmlns="http://www.omg.org/spec/DD/20100524/DI" />\n        <waypoint x="${mx}" y="${fy}" xmlns="http://www.omg.org/spec/DD/20100524/DI" />\n        <waypoint x="${mx}" y="${ty}" xmlns="http://www.omg.org/spec/DD/20100524/DI" />\n        <waypoint x="${tx}" y="${ty}" xmlns="http://www.omg.org/spec/DD/20100524/DI" />`;
+                }
+                edgesXml += `      <BPMNEdge id="DE_${generateUUID()}" bpmnElement="${e.id}">\n${wps}\n      </BPMNEdge>\n`;
             });
 
             return `<?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.org/schema/bpmn" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
-  <process id="${processUuid}" name="${cleanXmlString(procName)}" isExecutable="false">
-${elementsXml}${flowsXml}  </process>
+<definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="_${Date.now()}" targetNamespace="http://www.bizagi.com/definitions/_${Date.now()}" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <process id="${processUuid}" name="${cleanXmlString(procName)}">
+    <documentation />
+    <laneSet id="${laneSetId}">
+${lanesXml}
+    </laneSet>
+${elemXml}${flowsXml}  </process>
+${resourcesXml}
+  <collaboration id="${collabId}" name="${cleanXmlString(procId)}">
+    <participant id="${poolPartId}" name="${cleanXmlString(procName)}" processRef="${processUuid}">
+      <documentation />
+    </participant>
+  </collaboration>
+  <BPMNDiagram id="${diagramId}" xmlns="http://www.omg.org/spec/BPMN/20100524/DI">
+    <BPMNPlane id="${planeId}" bpmnElement="${collabId}">
+      <extension xmlns="http://www.omg.org/spec/DD/20100524/DI" />
+${shapesXml}${edgesXml}    </BPMNPlane>
+  </BPMNDiagram>
 </definitions>`;
         }
 
@@ -918,7 +1115,7 @@ ${elementsXml}${flowsXml}  </process>
                 const gwCount = nodes.filter(n => n.type === 'parallel-split' || n.type === 'xor-split').length;
 
                 processData.xpdl = generateXPDL(id, name, nodes, roles);
-                processData.bpmn = generateBPMN(name, activities, roles);
+                processData.bpmn = generateBPMN(id, name, nodes, roles);
 
                 document.getElementById('xpdlOutput').textContent = processData.xpdl;
                 document.getElementById('bpmnOutput').textContent = processData.bpmn;
