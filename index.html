@@ -70,8 +70,8 @@
             <h1>🔄 Generador Avanzado XPDL / BPMN + RACI</h1>
             <p>madeomade • Generador Avanzado XPDL / BPMN a partir de texto</p>
             <div class="header-actions">
-                <!-- BOTÓN PARA ABRIR LAS INSTRUCCIONES INTEGRADAS (MODAL) -->
-                <button class="btn-help" onclick="openModal()">📖 Ver Guía de Formato (Modal)</button>
+                <!-- BOTÓN PARA COPIAR EL PROMPT DE VALIDACIÓN -->
+                <button class="btn-help" onclick="openModal()">📋 Copiar Prompt de Validación IA</button>
                 
                 <!-- ENLACE POR SI TIENES UNA PÁGINA INDEPENDIENTE LLAMADA instrucciones.html -->
                 <a href="instrucciones.html" class="btn-help" target="_blank">🔗 Abrir instrucciones.html externa</a>
@@ -123,83 +123,72 @@
         </div>
     </div>
 
-    <!-- VENTANA MODAL INTEGRADA DE INSTRUCCIONES -->
+    <!-- VENTANA MODAL: PROMPT DE VALIDACIÓN IA -->
     <div id="instructionModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>📖 Guía de Uso e Instrucciones de Formato</h2>
+                <h2>📋 Prompt de Validación para IA</h2>
                 <span class="modal-close" onclick="closeModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <p>Para mapear correctamente la <strong>Matriz RACI</strong> en Bizagi de forma automatizada, estructura cada una de las actividades en el panel izquierdo respetando el siguiente formato:</p>
-                
-                <div class="format-example">
-                    <strong>Estructura por Actividad (flujo lineal):</strong>
-                    <pre>1. Nombre de la Actividad o Tarea
-Responsable: Rol principal (determina el carril / Lane)
-Ejecutante: Persona o rol que ejecuta la acción
-Consultado: Persona o rol que aporta feedback
-Informado: Persona o rol notificado al finalizar
-Acción: Descripción técnica detallada del proceso.</pre>
+                <p style="margin-bottom:12px;">Copia este prompt y pégalo en la IA que prefieras <strong>antes</strong> de adjuntar tu documento de proceso. La IA verificará que cumple la estructura que BizagiGenerator necesita para generar el XPDL/BPMN sin errores.</p>
+                <div class="format-example" id="promptText" style="cursor:text; user-select:all;">
+                    <pre style="white-space:pre-wrap;">Analiza este documento y verifica si sigue la estructura de proceso textual que necesito para importar automáticamente en Bizagi Modeler. Las reglas son:
+
+ESTRUCTURA GENERAL:
+- Cada actividad es un bloque que comienza con un número seguido de punto y el nombre de la tarea (ejemplo: "1. Recepción de la solicitud").
+- Después del nombre van los campos de rol, cada uno en su propia línea:
+  · Responsable: (obligatorio) — determina el carril/swimlane en el diagrama.
+  · Ejecutante: (opcional) — persona o rol que ejecuta.
+  · Consultado: (opcional) — persona o rol consultado.
+  · Informado: (opcional) — persona o rol notificado.
+- Luego viene "Acción:" seguido de la descripción. Todo el texto posterior (incluyendo saltos de línea y viñetas) forma parte de la acción hasta que aparezca el siguiente número de tarea.
+- Se permiten líneas en blanco entre bloques para legibilidad.
+
+FLUJO LINEAL:
+- Los números deben ser estrictamente crecientes (1, 2, 3, 4…) para un flujo secuencial normal.
+
+TAREAS EN PARALELO (Parallel Gateway):
+- Dos o más tareas consecutivas con el MISMO número (sin prefijos) indican ejecución simultánea.
+- Ejemplo válido: tres tareas numeradas como "3.", "3.", "3." seguidas de "4." — las tres se ejecutan en paralelo y convergen antes de la 4.
+- Los nombres de responsable pueden ser distintos entre las tareas paralelas.
+
+DECISIÓN XOR (Bifurcación SI / NO):
+- La tarea que origina la decisión incluye al final de su bloque una línea con "DECISION:" o "DECISIÓN:" seguido de la pregunta (ejemplo: "DECISION: ¿La solicitud es viable?").
+- Las dos tareas inmediatamente siguientes deben llevar el prefijo [SI] o [NO] en el nombre y compartir el MISMO número entre sí.
+- Ejemplo válido: tarea 4 con DECISION:, seguida de "5. [SI] Preparación favorable" y "5. [NO] Comunicación de cierre".
+- Si tras ambas ramas aparece una tarea con un número nuevo sin prefijo, ambas ramas convergen en ese punto.
+- Si solo una rama tiene continuación, la otra termina el proceso.
+
+SALTO EXPLÍCITO (IR A):
+- Cualquier tarea puede incluir "IR A: N" al final de su bloque, donde N es el número de otra tarea existente.
+- La tarea con "IR A:" no conecta con la siguiente en secuencia: su flujo de salida va directamente a la tarea N.
+- Si N es menor que el número actual, genera un bucle (retroceso). Si es mayor, genera un salto adelante.
+- Dentro de un XOR, solo una rama debería tener "IR A:". La otra sigue las reglas normales.
+- El número N debe corresponder a una tarea que exista en el proceso.
+
+ERRORES FRECUENTES A DETECTAR:
+- Numeración no consecutiva sin justificación (saltar del 2 al 5).
+- DECISION: sin par [SI]/[NO] inmediatamente después.
+- [SI] y [NO] con números distintos entre sí.
+- Tres o más tareas con prefijo [SI] o [NO] (solo se admiten exactamente dos).
+- Nombres de roles inconsistentes (ejemplo: "Soporte Nivel 1" en una tarea y "Soporte N1" en otra generaría carriles duplicados).
+- Tareas con el mismo número donde algunas llevan [SI]/[NO] y otras no (mezcla de paralelo y decisión).
+- Campo "Responsable:" ausente en alguna tarea.
+- "IR A:" apuntando a un número de tarea que no existe.
+- Ambas ramas de un XOR con "IR A:" (generaría un bucle sin salida).
+
+Devuélveme:
+1. Si el documento cumple o no la estructura.
+2. Qué partes sí cumplen correctamente.
+3. Qué incumplimientos concretos hay (con número de tarea y línea si es posible).
+4. Inconsistencias de numeración, nombres de roles o estructura.
+5. Si hay errores, una propuesta corregida del fragmento afectado.</pre>
                 </div>
-
-                <h3>🔀 Parallel Split / Join</h3>
-                <p>Repite el mismo número en varias tareas consecutivas. El generador inserta automáticamente un <strong>Parallel Split</strong> antes y un <strong>Parallel Join</strong> después.</p>
-                <div class="format-example">
-                    <strong>Ejemplo Parallel:</strong>
-                    <pre>2. Registro y revisión
-Responsable: Coordinador
-Acción: ...
-
-3. Evaluación funcional
-Responsable: Coordinador
-Acción: ...
-
-3. Evaluación técnica
-Responsable: Área Técnica
-Acción: ...
-
-3. Validación de prioridad
-Responsable: Área Solicitante
-Acción: ...
-
-4. Consolidación
-Responsable: Coordinador
-Acción: ...</pre>
-                </div>
-
-                <h3>❓ XOR (Decisión SI / NO)</h3>
-                <p>Añade <code>DECISION: [pregunta]</code> al final de la tarea que origina la bifurcación. Las dos tareas siguientes llevan <code>[SI]</code> o <code>[NO]</code> como prefijo y el <strong>mismo número</strong>. Si tras ambas ramas aparece un número nuevo sin prefijo, el generador inserta un <strong>XOR Join</strong> automático.</p>
-                <div class="format-example">
-                    <strong>Ejemplo XOR con convergencia:</strong>
-                    <pre>4. Consolidación
-Responsable: Coordinador
-Acción: El coordinador consolida los resultados.
-DECISION: ¿La solicitud es viable?
-
-5. [SI] Preparación de resolución favorable
-Responsable: Coordinador
-Acción: ...
-
-5. [NO] Comunicación de no viabilidad
-Responsable: Área Técnica
-Acción: ...
-
-6. Cierre y notificación final
-Responsable: Coordinador
-Acción: ...</pre>
-                </div>
-
-                <h3>💡 Comportamiento en Bizagi:</h3>
-                <ul>
-                    <li><strong>Responsable:</strong> Determina el carril (Lane) donde se dibuja la tarea.</li>
-                    <li><strong>Ejecutante, Consultado e Informado:</strong> Se mapean como <code>ExtendedAttributes</code> RACI nativos de Bizagi.</li>
-                    <li><strong>Acción:</strong> Se vuelca como Documentation de la actividad (acepta múltiples líneas).</li>
-                    <li><strong>DECISION:</strong> Genera un gateway XOR. Debe ir dentro o tras el bloque Acción.</li>
-                </ul>
             </div>
-            <div class="modal-footer">
-                <button class="btn-primary" style="flex:none; width:auto; padding:10px 20px;" onclick="closeModal()">Entendido</button>
+            <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end;">
+                <button class="btn-secondary" style="flex:none; padding:10px 20px;" onclick="closeModal()">Cerrar</button>
+                <button class="btn-primary" style="flex:none; width:auto; padding:10px 20px;" onclick="copyPrompt()">📋 Copiar al Portapapeles</button>
             </div>
         </div>
     </div>
@@ -301,7 +290,8 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                         consultado: '',
                         informado: '',
                         action: '',
-                        decision: null           // texto de DECISION: si existe
+                        decision: null,          // texto de DECISION: si existe
+                        irA: null                // número de tarea destino de IR A:
                     };
                     capturingAction = false;
                     continue;
@@ -330,8 +320,12 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                 if (actMatch) { current.action = actMatch[1].trim(); capturingAction = true; continue; }
 
                 // DECISION: debe aparecer dentro del bloque Acción (o tras él)
-                const decMatch = line.match(/^DECISION:\s*(.+)$/i);
+                const decMatch = line.match(/^DECISI[OÓ]N:\s*(.+)$/i);
                 if (decMatch) { current.decision = decMatch[1].trim(); capturingAction = false; continue; }
+
+                // IR A: N — salto explícito a otra tarea
+                const irAMatch = line.match(/^IR\s+A:\s*(\d+)$/i);
+                if (irAMatch) { current.irA = parseInt(irAMatch[1]); capturingAction = false; continue; }
 
                 if (capturingAction) {
                     current.action += current.action.endsWith('\n') ? line : '\n' + line;
@@ -449,6 +443,15 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
         function parseText(text) {
             const { activities, roles } = parseRawActivities(text);
             const { nodes, errors } = buildFlowNodes(activities);
+
+            // Validar IR A: targets
+            const allNums = new Set(activities.map(a => a.num));
+            activities.forEach(a => {
+                if (a.irA !== null) {
+                    if (!allNums.has(a.irA)) errors.push(`IR A: ${a.irA} en tarea "${a.name}" — la tarea ${a.irA} no existe.`);
+                }
+            });
+
             if (errors.length > 0) throw new Error('Errores de formato:\n' + errors.join('\n'));
             return { activities, nodes, roles };
         }
@@ -686,6 +689,23 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
             const posMap = {};
             positioned.forEach(n => { if (n.id) posMap[n.id] = n; });
 
+            // Mapa taskNum → primer nodo posicionado con ese número (para IR A:)
+            const taskNumMap = {};
+            positioned.forEach(n => {
+                if (n.type === 'task' && n.activity && taskNumMap[n.activity.num] === undefined) {
+                    taskNumMap[n.activity.num] = n;
+                }
+            });
+
+            // Helper: si el nodo origen tiene IR A:, redirige al destino indicado
+            function addTaskOutgoing(fromPos, toPos, condType, label) {
+                if (fromPos.activity?.irA != null) {
+                    const target = taskNumMap[fromPos.activity.irA];
+                    if (target) { addTrans(fromPos, target, condType, label); return; }
+                }
+                addTrans(fromPos, toPos, condType, label);
+            }
+
             // Reconstruir la secuencia de conectividad a partir de los nodos semánticos (nodes[])
             // junto con los positioned[] para tener coordenadas
             // Estrategia: recorrer positioned[] en orden ignorando los nodos marcadores,
@@ -741,7 +761,7 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                     // cada branch task conecta con el join
                     const joinNode = parserNodes[k]; // parallel-join
                     if (joinNode && joinNode.type === 'parallel-join') {
-                        branchTasks.forEach(bt => addTrans(posMap[bt.id], posMap[joinNode.id]));
+                        branchTasks.forEach(bt => addTaskOutgoing(posMap[bt.id], posMap[joinNode.id]));
                     }
                     pni = k; // NO saltar el join: se procesa en la siguiente iteración para generar join→siguiente
                     continue;
@@ -774,8 +794,8 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                     if (noTasks[0]) addTrans(curPos, posMap[noTasks[0].id], 'CONDITION', 'NO');
 
                     // conectar internamente cada rama
-                    for (let t = 0; t < siTasks.length - 1; t++) addTrans(posMap[siTasks[t].id], posMap[siTasks[t+1].id]);
-                    for (let t = 0; t < noTasks.length - 1; t++) addTrans(posMap[noTasks[t].id], posMap[noTasks[t+1].id]);
+                    for (let t = 0; t < siTasks.length - 1; t++) addTaskOutgoing(posMap[siTasks[t].id], posMap[siTasks[t+1].id]);
+                    for (let t = 0; t < noTasks.length - 1; t++) addTaskOutgoing(posMap[noTasks[t].id], posMap[noTasks[t+1].id]);
 
                     // ¿hay xor-join?
                     const afterBranches = parserNodes[k];
@@ -783,8 +803,8 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                         const joinPos = posMap[afterBranches.id];
                         const lastSI = siTasks[siTasks.length - 1];
                         const lastNO = noTasks[noTasks.length - 1];
-                        if (lastSI) addTrans(posMap[lastSI.id], joinPos);
-                        if (lastNO) addTrans(posMap[lastNO.id], joinPos);
+                        if (lastSI) addTaskOutgoing(posMap[lastSI.id], joinPos);
+                        if (lastNO) addTaskOutgoing(posMap[lastNO.id], joinPos);
                         pni = k; // NO saltar el join: se procesa en la siguiente iteración para generar join→siguiente
                     } else {
                         // sin join: cada rama termina con su propio end (ya en positioned)
@@ -801,7 +821,11 @@ Acción: El área promotora confirma la aceptación y da por cerrada formalmente
                     if (next < parserNodes.length) {
                         const nextNode = parserNodes[next];
                         if (nextNode.type !== 'xor-branch-si-start' && nextNode.type !== 'xor-branch-no-start') {
-                            addTrans(curPos, posMap[nextNode.id]);
+                            if (cur.type === 'task') {
+                                addTaskOutgoing(curPos, posMap[nextNode.id]);
+                            } else {
+                                addTrans(curPos, posMap[nextNode.id]);
+                            }
                         }
                     }
                 }
@@ -934,6 +958,15 @@ ${transitionsXmlParts.join('\n')}
             // ── Build edges (same graph traversal as XPDL) ──────────
             const edges = []; // { id, from, to, condType, label }
             const posMap = {}; positioned.forEach(n => { if (n.id) posMap[n.id] = n; });
+
+            // Mapa taskNum → primer nodo ID (para IR A:)
+            const taskNumMap = {};
+            positioned.forEach(n => {
+                if (n.type === 'task' && n.activity && taskNumMap[n.activity.num] === undefined) {
+                    taskNumMap[n.activity.num] = n.id;
+                }
+            });
+
             const parserNodes = [{ type: 'start', id: positioned[0].id }, ...nodes];
             if (positioned[positioned.length-1].type === 'end' && (nodes.length === 0 || nodes[nodes.length-1].type !== 'end')) {
                 parserNodes.push({ type: 'end', id: positioned[positioned.length-1].id });
@@ -942,6 +975,16 @@ ${transitionsXmlParts.join('\n')}
             function addEdge(fromId, toId, condType, label) {
                 if (!fromId || !toId) return;
                 edges.push({ id: 'Id_' + generateUUID(), from: fromId, to: toId, condType: condType || 'NONE', label: label || '' });
+            }
+
+            // Helper: si el nodo origen tiene IR A:, redirige al destino indicado
+            function addTaskEdge(fromId, toId, condType, label) {
+                const fromNode = posMap[fromId];
+                if (fromNode?.activity?.irA != null) {
+                    const targetId = taskNumMap[fromNode.activity.irA];
+                    if (targetId) { addEdge(fromId, targetId, condType, label); return; }
+                }
+                addEdge(fromId, toId, condType, label);
             }
 
             let pni = 0;
@@ -953,7 +996,7 @@ ${transitionsXmlParts.join('\n')}
                     let k = pni + 1; const bt = [];
                     while (k < parserNodes.length && parserNodes[k].type === 'task') { bt.push(parserNodes[k]); k++; }
                     bt.forEach(b => addEdge(cur.id, b.id));
-                    if (parserNodes[k]?.type === 'parallel-join') bt.forEach(b => addEdge(b.id, parserNodes[k].id));
+                    if (parserNodes[k]?.type === 'parallel-join') bt.forEach(b => addTaskEdge(b.id, parserNodes[k].id));
                     pni = k; continue;
                 }
 
@@ -965,11 +1008,11 @@ ${transitionsXmlParts.join('\n')}
                     const no = []; while (k < parserNodes.length && parserNodes[k].type !== 'xor-branch-no-end') { if (parserNodes[k].id) no.push(parserNodes[k]); k++; } k++;
                     if (si[0]) addEdge(cur.id, si[0].id, 'CONDITION', 'SI');
                     if (no[0]) addEdge(cur.id, no[0].id, 'CONDITION', 'NO');
-                    for (let t = 0; t < si.length - 1; t++) addEdge(si[t].id, si[t+1].id);
-                    for (let t = 0; t < no.length - 1; t++) addEdge(no[t].id, no[t+1].id);
+                    for (let t = 0; t < si.length - 1; t++) addTaskEdge(si[t].id, si[t+1].id);
+                    for (let t = 0; t < no.length - 1; t++) addTaskEdge(no[t].id, no[t+1].id);
                     if (parserNodes[k]?.type === 'xor-join') {
-                        if (si.length) addEdge(si[si.length-1].id, parserNodes[k].id);
-                        if (no.length) addEdge(no[no.length-1].id, parserNodes[k].id);
+                        if (si.length) addTaskEdge(si[si.length-1].id, parserNodes[k].id);
+                        if (no.length) addTaskEdge(no[no.length-1].id, parserNodes[k].id);
                     }
                     pni = k; continue;
                 }
@@ -979,7 +1022,11 @@ ${transitionsXmlParts.join('\n')}
                     let next = pni + 1;
                     while (next < parserNodes.length && !parserNodes[next].id) next++;
                     if (next < parserNodes.length && parserNodes[next].type !== 'xor-branch-si-start' && parserNodes[next].type !== 'xor-branch-no-start') {
-                        addEdge(cur.id, parserNodes[next].id);
+                        if (cur.type === 'task') {
+                            addTaskEdge(cur.id, parserNodes[next].id);
+                        } else {
+                            addEdge(cur.id, parserNodes[next].id);
+                        }
                     }
                 }
                 pni++;
@@ -1139,6 +1186,7 @@ ${shapesXml}${edgesXml}      <BPMNShape id="DS_${generateUUID()}" bpmnElement="$
                 }
 
                 const gwCount = nodes.filter(n => n.type === 'parallel-split' || n.type === 'xor-split').length;
+                const irACount = activities.filter(a => a.irA !== null).length;
 
                 processData.xpdl = generateXPDL(id, name, nodes, roles);
                 processData.bpmn = generateBPMN(id, name, nodes, roles);
@@ -1146,8 +1194,9 @@ ${shapesXml}${edgesXml}      <BPMNShape id="DS_${generateUUID()}" bpmnElement="$
                 document.getElementById('xpdlOutput').textContent = processData.xpdl;
                 document.getElementById('bpmnOutput').textContent = processData.bpmn;
 
-                const gwMsg = gwCount > 0 ? ` · ${gwCount} gateway(s) detectado(s)` : '';
-                showMsg(`✅ ¡Éxito! ${activities.length} actividades · ${roles.length} carriles${gwMsg}`, 'success');
+                const gwMsg = gwCount > 0 ? ` · ${gwCount} gateway(s)` : '';
+                const irAMsg = irACount > 0 ? ` · ${irACount} salto(s) IR A` : '';
+                showMsg(`✅ ¡Éxito! ${activities.length} actividades · ${roles.length} carriles${gwMsg}${irAMsg}`, 'success');
 
             } catch (err) {
                 showMsg('💥 Error crítico procesando el modelo: ' + err.message, 'error');
@@ -1198,6 +1247,24 @@ ${shapesXml}${edgesXml}      <BPMNShape id="DS_${generateUUID()}" bpmnElement="$
         }
         function closeModal() {
             document.getElementById('instructionModal').classList.remove('show');
+        }
+        function copyPrompt() {
+            const text = document.getElementById('promptText').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const original = btn.textContent;
+                btn.textContent = '✅ ¡Copiado!';
+                btn.style.background = '#16a34a';
+                setTimeout(() => { btn.textContent = original; btn.style.background = ''; }, 2000);
+            }).catch(() => {
+                // Fallback para navegadores sin clipboard API
+                const range = document.createRange();
+                range.selectNodeContents(document.getElementById('promptText'));
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+            });
         }
         window.onclick = function(event) {
             const modal = document.getElementById('instructionModal');
