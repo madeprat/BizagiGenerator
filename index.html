@@ -1072,6 +1072,10 @@ ${transitionsXmlParts.join('\n')}
                 edgesXml += `      <BPMNEdge id="DE_${generateUUID()}" bpmnElement="${e.id}">\n${wps}\n      </BPMNEdge>\n`;
             });
 
+            const mainProcId   = 'Id_' + generateUUID();
+            const mainPartId   = 'Id_' + generateUUID();
+            const mainLaneSetId = 'Id_' + generateUUID();
+
             return `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="_${Date.now()}" targetNamespace="http://www.bizagi.com/definitions/_${Date.now()}" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
   <process id="${processUuid}" name="${cleanXmlString(procName)}">
@@ -1080,16 +1084,38 @@ ${transitionsXmlParts.join('\n')}
 ${lanesXml}
     </laneSet>
 ${elemXml}${flowsXml}  </process>
+  <process id="${mainProcId}">
+    <documentation />
+    <laneSet id="${mainLaneSetId}" />
+  </process>
 ${resourcesXml}
   <collaboration id="${collabId}" name="${cleanXmlString(procId)}">
     <participant id="${poolPartId}" name="${cleanXmlString(procName)}" processRef="${processUuid}">
       <documentation />
     </participant>
+    <participant id="${mainPartId}" processRef="${mainProcId}">
+      <extensionElements>
+        <bizagi:BizagiExtensions xmlns:bizagi="http://www.bizagi.com/bpmn20">
+          <bizagi:BizagiProperties>
+            <bizagi:BizagiProperty name="bgColor" value="White" />
+            <bizagi:BizagiProperty name="borderColor" value="Black" />
+            <bizagi:BizagiProperty name="textColor" value="Black" />
+            <bizagi:BizagiProperty name="textBackgroundColor" value="Transparent" />
+            <bizagi:BizagiProperty name="textDirection" value="" />
+            <bizagi:BizagiProperty name="isMainParticipant" />
+          </bizagi:BizagiProperties>
+        </bizagi:BizagiExtensions>
+      </extensionElements>
+    </participant>
   </collaboration>
   <BPMNDiagram id="${diagramId}" xmlns="http://www.omg.org/spec/BPMN/20100524/DI">
     <BPMNPlane id="${planeId}" bpmnElement="${collabId}">
       <extension xmlns="http://www.omg.org/spec/DD/20100524/DI" />
-${shapesXml}${edgesXml}    </BPMNPlane>
+${shapesXml}${edgesXml}      <BPMNShape id="DS_${generateUUID()}" bpmnElement="${mainPartId}" isHorizontal="true">
+        <extension xmlns="http://www.omg.org/spec/DD/20100524/DI" />
+        <Bounds x="30" y="30" width="0" height="0" xmlns="http://www.omg.org/spec/DD/20100524/DC" />
+      </BPMNShape>
+    </BPMNPlane>
   </BPMNDiagram>
 </definitions>`;
         }
